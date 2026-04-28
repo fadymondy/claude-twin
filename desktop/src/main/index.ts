@@ -1,19 +1,21 @@
 /**
  * claude-twin desktop — Electron main process entry.
  *
- * For #41 (scaffold) this:
  *   - boots a single hidden BrowserWindow that loads the React renderer
- *   - registers the system tray with Show / Quit menu items
+ *   - registers the system tray (3-state status colour: red/amber/green)
+ *   - embeds the @claude-twin/mcp-server WsBridge directly so the user
+ *     doesn't need a separate Node install
  *   - hides the dock icon on macOS so we live in the menubar by default
- *
- * The WS-bridge embedding (#42) and stdio shim socket (#43) land later.
  */
 
 import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
-import { createTray } from './tray.js';
+import { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
+import { createTray, type TrayApi } from './tray.js';
 
 let mainWindow: BrowserWindow | null = null;
+let bridge: WsBridge | null = null;
+let trayApi: TrayApi | null = null;
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -47,14 +49,14 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (process.platform === 'darwin') {
     app.dock?.hide();
   }
 
   mainWindow = createWindow();
 
-  createTray({
+  trayApi = createTray({
     onShow: () => {
       if (!mainWindow) mainWindow = createWindow();
       mainWindow.show();
@@ -65,14 +67,35 @@ app.whenReady().then(() => {
       app.quit();
     },
   });
+
+  bridge = new WsBridge({
+    token: process.env.CLAUDE_TWIN_WS_TOKEN ?? null,
+  });
+
+  bridge.on('ready', () => trayApi?.setStatus('green'));
+
+  try {
+    await bridge.start();
+    trayApi.setStatus('amber'); // listening, no client yet
+  } catch (err) {
+    console.error('[claude-twin] bridge start failed:', err);
+    trayApi.setStatus('red');
+  }
 });
 
 app.on('window-all-closed', () => {
   // Tray keeps the app alive on every platform.
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', async () => {
   app.isQuitting = true;
+  if (bridge) {
+    try {
+      await bridge.stop();
+    } catch (err) {
+      console.warn('[claude-twin] bridge stop error:', err);
+    }
+  }
 });
 
 app.on('activate', () => {
