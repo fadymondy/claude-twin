@@ -1,13 +1,9 @@
 /**
- * claude-twin — service worker (MV3)
+ * claude-twin — service worker (MV3).
  *
- * For #4 (scaffold) this only does the bare minimum to load cleanly:
- *   - install / startup hooks initialise default storage
- *   - message router dispatches POPUP_REQUEST.getStatus
- *   - ensureOffscreenDocument() lazy-creates the offscreen doc
- *
- * The real WebSocket bridge (#5), command bus (#6), monitor manager (#11),
- * and meeting/captions handling are out of scope for this issue.
+ * Owns the offscreen document lifecycle, routes popup messages, and forwards
+ * control directives to the offscreen WebSocket bridge. The actual command
+ * bus / event forwarding lands with #6.
  */
 
 const OFFSCREEN_URL = chrome.runtime.getURL('offscreen/offscreen.html');
@@ -36,6 +32,11 @@ async function ensureOffscreenDocument() {
   }
 }
 
+async function forwardToOffscreen(payload) {
+  await ensureOffscreenDocument();
+  return chrome.runtime.sendMessage({ target: 'offscreen', payload });
+}
+
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   console.log('[claude-twin] installed:', reason);
 
@@ -46,6 +47,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
       privacyMode: false,
       alertsToday: 0,
       wsConnected: false,
+      authStatus: 'pending',
     });
   }
 
@@ -70,7 +72,32 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.type === 'OFFSCREEN_EVENT') {
+    handleOffscreenEvent(message.event, message.data);
+    sendResponse({ ok: true });
+    return;
+  }
 });
+
+async function handleOffscreenEvent(event, data) {
+  switch (event) {
+    case 'STATUS_UPDATE':
+      await chrome.storage.local.set(data);
+      break;
+    case 'AUTH_STATUS':
+      await chrome.storage.local.set({ authStatus: data.status, authError: data.error || null });
+      break;
+    case 'SERVER_CONFIG':
+      await chrome.storage.local.set({ serverConfig: data });
+      break;
+    case 'ALERT': {
+      const store = await chrome.storage.local.get('alertsToday');
+      await chrome.storage.local.set({ alertsToday: (store.alertsToday || 0) + 1 });
+      break;
+    }
+  }
+}
 
 async function handlePopupRequest(message, sendResponse) {
   const { action } = message;
@@ -81,11 +108,15 @@ async function handlePopupRequest(message, sendResponse) {
       'enabled',
       'privacyMode',
       'alertsToday',
+      'authStatus',
+      'authError',
     ]);
     sendResponse({
       ok: true,
       data: {
         wsConnected: !!data.wsConnected,
+        authStatus: data.authStatus || 'pending',
+        authError: data.authError || null,
         enabled: data.enabled !== false,
         privacyMode: !!data.privacyMode,
         alertsToday: data.alertsToday || 0,
@@ -97,12 +128,27 @@ async function handlePopupRequest(message, sendResponse) {
 
   if (action === 'setEnabled') {
     await chrome.storage.local.set({ enabled: !!message.value });
+    await forwardToOffscreen({
+      type: 'CONTROL',
+      command: message.value ? 'connect' : 'disconnect',
+    });
     sendResponse({ ok: true });
     return;
   }
 
   if (action === 'setPrivacyMode') {
     await chrome.storage.local.set({ privacyMode: !!message.value });
+    sendResponse({ ok: true });
+    return;
+  }
+
+  if (action === 'setToken') {
+    await chrome.storage.local.set({ token: message.value || null });
+    await forwardToOffscreen({
+      type: 'CONTROL',
+      command: 'update_token',
+      token: message.value || null,
+    });
     sendResponse({ ok: true });
     return;
   }

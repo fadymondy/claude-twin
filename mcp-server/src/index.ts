@@ -2,15 +2,24 @@
 /**
  * @claude-twin/mcp-server — stdio entry point.
  *
- * Boots the MCP server, wires it to stdio transport, and handles graceful
- * shutdown on SIGINT/SIGTERM and stdin close.
+ * Boots the MCP server, wires it to stdio transport, starts the local
+ * WebSocket bridge for the Chrome extension, and handles graceful shutdown
+ * on SIGINT/SIGTERM and stdin close.
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createServer, SERVER_NAME, SERVER_VERSION } from './server.js';
 
 async function main(): Promise<void> {
-  const server = createServer();
+  const bridgeOpts: { port?: number; host?: string; token?: string | null } = {};
+  const port = parseEnvPort('CLAUDE_TWIN_WS_PORT');
+  if (port !== undefined) bridgeOpts.port = port;
+  if (process.env.CLAUDE_TWIN_WS_HOST) bridgeOpts.host = process.env.CLAUDE_TWIN_WS_HOST;
+  if (process.env.CLAUDE_TWIN_WS_TOKEN !== undefined) {
+    bridgeOpts.token = process.env.CLAUDE_TWIN_WS_TOKEN;
+  }
+
+  const { server, bridge } = createServer({ bridge: bridgeOpts });
   const transport = new StdioServerTransport();
 
   let shuttingDown = false;
@@ -19,6 +28,7 @@ async function main(): Promise<void> {
     shuttingDown = true;
     process.stderr.write(`[${SERVER_NAME}] shutting down: ${reason}\n`);
     try {
+      await bridge.stop();
       await server.close();
     } catch (err) {
       process.stderr.write(`[${SERVER_NAME}] close error: ${String(err)}\n`);
@@ -37,8 +47,16 @@ async function main(): Promise<void> {
     void shutdown(`unhandledRejection: ${String(reason)}`, 1);
   });
 
+  await bridge.start();
   await server.connect(transport);
   process.stderr.write(`[${SERVER_NAME}] v${SERVER_VERSION} ready on stdio\n`);
+}
+
+function parseEnvPort(name: string): number | undefined {
+  const raw = process.env[name];
+  if (!raw) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 && n < 65536 ? n : undefined;
 }
 
 main().catch((err) => {
