@@ -1,32 +1,27 @@
 /**
- * claude-twin — command handler.
+ * claude-twin — command dispatcher.
  *
- * Receives `command` messages forwarded from the offscreen WebSocket bridge
- * (via `chrome.runtime.sendMessage` to the service worker), dispatches them
- * to the registered action functions, and returns the result back to the
- * offscreen for the WS reply.
+ * Registry of named action handlers. Lives in the service worker so action
+ * implementations can use the full extension API surface (chrome.tabs,
+ * chrome.scripting, chrome.tabGroups, …). The offscreen document forwards
+ * inbound `command` WS messages here via `chrome.runtime.sendMessage` and
+ * wraps the response back into a `response` WS message.
  *
- * For #6 (command bus protocol) we register a single `ping` action so the
- * round-trip path is testable end-to-end. Real browser actions (search,
- * read, send, click, fill, etc.) land in #7+ as additional registrations.
+ * Built-in: `ping`. Per-platform actions (gmail/slack/etc.) register
+ * themselves from their own modules.
  */
 
 const actions = new Map();
 
 /**
  * Register an async action handler.
- * @param {string} name action name (e.g. 'ping', 'tabs', 'open')
+ * @param {string} name e.g. 'ping', 'tabs', 'open'
  * @param {(params: Record<string, unknown>) => Promise<unknown>} fn
  */
 export function registerAction(name, fn) {
   actions.set(name, fn);
 }
 
-/**
- * Look up an action by name.
- * @param {string} name
- * @returns {((params: Record<string, unknown>) => Promise<unknown>) | undefined}
- */
 export function getAction(name) {
   return actions.get(name);
 }
@@ -36,9 +31,8 @@ export function listActions() {
 }
 
 /**
- * Dispatch a command and produce the response payload (without the id —
- * the caller adds that). Returns `{ result }` on success or `{ error }`
- * on failure, matching the wire protocol.
+ * Dispatch a command and produce the response shape (without `id` —
+ * the caller adds that). `{ result }` on success, `{ error }` on failure.
  */
 export async function dispatch(action, params = {}) {
   const fn = actions.get(action);
@@ -58,7 +52,7 @@ export async function dispatch(action, params = {}) {
   }
 }
 
-// ─── Built-in actions ─────────────────────────────────────────────────────
+// ─── Built-in: ping ───────────────────────────────────────────────────────
 
 registerAction('ping', async () => ({
   pong: true,
