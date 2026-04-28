@@ -7,6 +7,8 @@ import { registerTabTools } from './tools/tabs.js';
 import { registerDomTools } from './tools/dom.js';
 import { registerSearchTool } from './tools/search.js';
 import { registerScriptTools } from './tools/scripts.js';
+import { registerMonitorTools } from './tools/monitors.js';
+import { MonitorRegistry } from './state/monitors.js';
 
 export const SERVER_NAME = 'claude-twin';
 export const SERVER_VERSION = '0.0.0';
@@ -34,6 +36,9 @@ export function createServer(opts: CreateServerOptions = {}): CreatedServer {
   registerDomTools(server, bridge);
   registerSearchTool(server, bridge);
   registerScriptTools(server, bridge);
+
+  const monitors = new MonitorRegistry(bridge);
+  registerMonitorTools(server, monitors);
 
   return { server, bridge };
 }

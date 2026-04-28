@@ -302,6 +302,7 @@ export class WsBridge extends EventEmitter {
       this.clientExtensionId = msg.extension_id || null;
       this.send(ws, { type: 'auth_ok' });
       log(`auth ok (extension_id=${this.clientExtensionId ?? 'unknown'})`);
+      this.emit('ready', { extensionId: this.clientExtensionId });
       return;
     }
 
