@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discussions
+    url: https://github.com/fadymondy/claude-twin/discussions
+    about: Ask questions, share workflows, propose ideas
+  - name: Security
+    url: https://github.com/fadymondy/claude-twin/security/policy
+    about: Report security vulnerabilities privately

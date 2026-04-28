@@ -1,0 +1,86 @@
+name: Bug Report
+description: Report a bug in claude-twin
+labels: ["type:bug", "status:todo"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug. Please give us enough to reproduce.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Numbered steps that consistently trigger the bug.
+      placeholder: |
+        1. Load the unpacked extension at commit X
+        2. Open https://example.com
+        3. Run `/twin:read example` from Claude Code
+        4. Observe error in service worker console
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Where does the bug surface?
+      multiple: true
+      options:
+        - Chrome extension — service worker
+        - Chrome extension — offscreen / WebSocket
+        - Chrome extension — content script
+        - Chrome extension — popup
+        - MCP server — tool execution
+        - MCP server — WebSocket bridge
+        - MCP server — startup / config
+        - Claude Code plugin — slash command
+        - Build / install
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How bad is it?
+      options:
+        - critical (data loss, browser crash, security issue)
+        - high (major feature broken, no workaround)
+        - medium (feature broken, workaround exists)
+        - low (cosmetic, edge case)
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform integration affected
+      description: e.g. gmail, slack, whatsapp, or "not platform-specific"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Chrome version, OS, Node version, claude-twin commit/tag.
+      placeholder: |
+        Chrome 131
+        macOS 14.5
+        Node 20.11
+        claude-twin @ abc1234
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Service worker console, MCP server stdout, anything that helps. Use code fences.
+      render: shell
