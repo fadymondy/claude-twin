@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["node", "electron"],
+    "outDir": "./out/main",
+    "rootDir": "./src",
+    "noEmit": true,
+    "tsBuildInfoFile": "./out/.tsbuildinfo.main",
+    "composite": false
+  },
+  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
+  "exclude": ["node_modules", "out", "src/renderer"]
+}
