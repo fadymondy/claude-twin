@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "outDir": "./out/renderer",
+    "rootDir": "./src",
+    "noEmit": true,
+    "tsBuildInfoFile": "./out/.tsbuildinfo.renderer",
+    "composite": false
+  },
+  "include": ["src/renderer/**/*", "src/shared/**/*"],
+  "exclude": ["node_modules", "out", "src/main", "src/preload"]
+}

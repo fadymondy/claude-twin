@@ -1,0 +1,32 @@
+appId: com.fadymondy.claude-twin
+productName: claude-twin
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.{md,test.ts,spec.ts}'
+asar: true
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  hardenedRuntime: true
+  gatekeeperAssess: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+linux:
+  target:
+    - AppImage
+  category: Development
+publish:
+  provider: github
+  owner: fadymondy
+  repo: claude-twin
