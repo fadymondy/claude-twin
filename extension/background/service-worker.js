@@ -1,10 +1,16 @@
 /**
- * claude-twin — service worker (MV3).
+ * claude-twin — service worker (MV3, ES module).
  *
- * Owns the offscreen document lifecycle, routes popup messages, and forwards
- * control directives to the offscreen WebSocket bridge. The actual command
- * bus / event forwarding lands with #6.
+ * - Owns the offscreen document lifecycle.
+ * - Routes popup messages.
+ * - Hosts the command dispatcher (chrome.tabs / chrome.scripting / chrome.tabGroups
+ *   are only available from extension contexts that have the right permissions —
+ *   the SW does, the offscreen does not, so dispatch lives here).
+ * - Forwards control + outbound payloads to the offscreen WS bridge.
  */
+
+import { dispatch as dispatchCommand } from '../commands/handler.js';
+import '../commands/tabs.js';
 
 const OFFSCREEN_URL = chrome.runtime.getURL('offscreen/offscreen.html');
 
@@ -77,6 +83,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     handleOffscreenEvent(message.event, message.data);
     sendResponse({ ok: true });
     return;
+  }
+
+  if (message.type === 'EXECUTE_COMMAND') {
+    dispatchCommand(message.action, message.params || {})
+      .then((response) => sendResponse(response))
+      .catch((err) => sendResponse({ error: { message: err?.message || String(err) } }));
+    return true; // async sendResponse
   }
 });
 

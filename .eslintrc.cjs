@@ -39,10 +39,5 @@ module.exports = {
         '@typescript-eslint/no-var-requires': 'off',
       },
     },
-    {
-      // Service worker and other classic-script files aren't modules.
-      files: ['extension/background/**/*.js'],
-      parserOptions: { sourceType: 'script' },
-    },
   ],
 };

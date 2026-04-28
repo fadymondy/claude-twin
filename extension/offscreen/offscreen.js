@@ -14,8 +14,6 @@
  *   →  event     { type: 'event', source, eventType, data, timestamp }
  */
 
-import { dispatch as dispatchCommand } from '../commands/handler.js';
-
 const WS_URL = 'ws://127.0.0.1:9997/twin';
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
@@ -127,11 +125,20 @@ async function handleCommand(msg) {
     console.warn('[claude-twin:offscreen] malformed command (missing id/action)');
     return;
   }
-  const { result, error } = await dispatchCommand(msg.action, msg.params || {});
-  const response = { type: 'response', id: msg.id };
-  if (error) response.error = error;
-  else response.result = result;
-  send(response);
+  let response;
+  try {
+    response = await chrome.runtime.sendMessage({
+      type: 'EXECUTE_COMMAND',
+      action: msg.action,
+      params: msg.params || {},
+    });
+  } catch (err) {
+    response = { error: { message: err?.message || 'service worker unavailable' } };
+  }
+  const wire = { type: 'response', id: msg.id };
+  if (response?.error) wire.error = response.error;
+  else wire.result = response?.result ?? null;
+  send(wire);
 }
 
 function handleError() {
