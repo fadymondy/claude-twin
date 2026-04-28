@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>claude-twin</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>claude-twin</h1>
+      <span id="version" class="muted"></span>
+    </header>
+
+    <section class="status">
+      <div class="row">
+        <span class="label">MCP bridge</span>
+        <span id="ws-status" class="value">…</span>
+      </div>
+      <div class="row">
+        <span class="label">Alerts today</span>
+        <span id="alerts-today" class="value">…</span>
+      </div>
+    </section>
+
+    <section class="toggles">
+      <label class="toggle">
+        <input type="checkbox" id="enabled" />
+        <span>Enabled</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="privacy" />
+        <span>Privacy mode</span>
+      </label>
+    </section>
+
+    <footer>
+      <a href="https://github.com/fadymondy/claude-twin" target="_blank" rel="noopener noreferrer">
+        github.com/fadymondy/claude-twin
+      </a>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

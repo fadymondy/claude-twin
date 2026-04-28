@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "claude-twin",
+  "short_name": "claude-twin",
+  "version": "0.0.0",
+  "description": "Real-time browser monitoring for your digital twin — drives 17 web apps from Claude Code via a local MCP server.",
+  "minimum_chrome_version": "120",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "claude-twin"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": ["tabs", "scripting", "storage", "offscreen", "alarms", "tabGroups"],
+  "host_permissions": ["*://www.google.com/*"],
+  "optional_host_permissions": [
+    "*://mail.google.com/*",
+    "*://app.slack.com/*",
+    "*://web.whatsapp.com/*",
+    "*://discord.com/*",
+    "*://web.telegram.org/*",
+    "*://x.com/*",
+    "*://github.com/*",
+    "*://linear.app/*",
+    "*://*.atlassian.net/*",
+    "*://calendar.google.com/*",
+    "*://app.cal.com/*",
+    "*://meet.google.com/*",
+    "*://app.zoom.us/*",
+    "*://console.cloud.google.com/*",
+    "*://claude.ai/*",
+    "*://platform.openai.com/*",
+    "*://perplexity.ai/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen/offscreen.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
