@@ -12,3 +12,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial repository scaffolding, gh-pms label set, issue and PR templates.
 - Monorepo workspace layout (`extension/`, `mcp-server/`, `plugin/`) with TypeScript project references, shared `tsconfig.base.json`, ESLint, Prettier, EditorConfig, and `.nvmrc`.
 - Baseline GitHub Actions CI workflow (`.github/workflows/ci.yml`) running `npm ci`, lint, format check, and typecheck on push and pull requests.
+- MCP server skeleton (`mcp-server/`): boots over stdio using `@modelcontextprotocol/sdk`, registers a `twin_ping` health-check tool, handles graceful shutdown on `SIGINT` / `SIGTERM` / stdin close.
