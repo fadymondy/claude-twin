@@ -11,6 +11,7 @@
 
 import { dispatch as dispatchCommand } from '../commands/handler.js';
 import '../commands/tabs.js';
+import '../commands/dom.js';
 
 const OFFSCREEN_URL = chrome.runtime.getURL('offscreen/offscreen.html');
 
