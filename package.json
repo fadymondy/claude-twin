@@ -1,0 +1,44 @@
+{
+  "name": "claude-twin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Standalone Chrome extension + MCP server + Claude Code plugin for browser-based digital twin monitoring",
+  "license": "MIT",
+  "author": "Fady Mondy <info@3x1.io>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fadymondy/claude-twin.git"
+  },
+  "homepage": "https://github.com/fadymondy/claude-twin",
+  "bugs": {
+    "url": "https://github.com/fadymondy/claude-twin/issues"
+  },
+  "workspaces": [
+    "extension",
+    "mcp-server",
+    "plugin"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --build",
+    "build": "npm run --workspaces --if-present build",
+    "test": "npm run --workspaces --if-present test",
+    "clean": "tsc --build --clean && rimraf '*/dist'"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
