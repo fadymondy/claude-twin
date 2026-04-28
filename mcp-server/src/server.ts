@@ -4,6 +4,7 @@ import { registerPingTool } from './tools/ping.js';
 import { registerBridgeTool } from './tools/bridge.js';
 import { registerExtensionPingTool } from './tools/extension-ping.js';
 import { registerTabTools } from './tools/tabs.js';
+import { registerDomTools } from './tools/dom.js';
 
 export const SERVER_NAME = 'claude-twin';
 export const SERVER_VERSION = '0.0.0';
@@ -28,6 +29,7 @@ export function createServer(opts: CreateServerOptions = {}): CreatedServer {
   registerBridgeTool(server, bridge);
   registerExtensionPingTool(server, bridge);
   registerTabTools(server, bridge);
+  registerDomTools(server, bridge);
 
   return { server, bridge };
 }
