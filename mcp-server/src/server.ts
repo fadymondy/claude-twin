@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WsBridge, type WsBridgeOptions } from './bridge/ws-host.js';
 import { registerPingTool } from './tools/ping.js';
 import { registerBridgeTool } from './tools/bridge.js';
+import { registerExtensionPingTool } from './tools/extension-ping.js';
 
 export const SERVER_NAME = 'claude-twin';
 export const SERVER_VERSION = '0.0.0';
@@ -24,6 +25,7 @@ export function createServer(opts: CreateServerOptions = {}): CreatedServer {
 
   registerPingTool(server);
   registerBridgeTool(server, bridge);
+  registerExtensionPingTool(server, bridge);
 
   return { server, bridge };
 }

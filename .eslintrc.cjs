@@ -34,10 +34,15 @@ module.exports = {
     {
       files: ['extension/**/*.js'],
       parser: 'espree',
-      parserOptions: { ecmaVersion: 2022, sourceType: 'script' },
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
       rules: {
         '@typescript-eslint/no-var-requires': 'off',
       },
+    },
+    {
+      // Service worker and other classic-script files aren't modules.
+      files: ['extension/background/**/*.js'],
+      parserOptions: { sourceType: 'script' },
     },
   ],
 };

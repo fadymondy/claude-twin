@@ -1,17 +1,20 @@
 /**
- * claude-twin — offscreen document.
+ * claude-twin — offscreen document (ES module).
  *
  * Maintains a persistent WebSocket connection to the local MCP server's
  * bridge on ws://127.0.0.1:9997/twin. The offscreen document outlives the
  * service worker, so the WS stays warm across SW idle/restart cycles.
  *
- * Wire protocol (see mcp-server/src/bridge/protocol.ts):
- *   →   { type: 'auth', token, extension_id }
- *   ←   { type: 'auth_ok' | 'auth_fail', reason? }
- *   →   { type: 'ping' }   ←   { type: 'pong' }
- *
- * Full command bus (request/response/event envelopes) lands in #6.
+ * Wire protocol (mirrored from mcp-server/src/bridge/protocol.ts):
+ *   →  auth      { type: 'auth', token, extension_id }
+ *   ←  auth_ok / auth_fail
+ *   →  ping      ←  pong
+ *   ←  command   { type: 'command', id, action, params? }   (server → ext)
+ *   →  response  { type: 'response', id, result | error }    (ext → server)
+ *   →  event     { type: 'event', source, eventType, data, timestamp }
  */
+
+import { dispatch as dispatchCommand } from '../commands/handler.js';
 
 const WS_URL = 'ws://127.0.0.1:9997/twin';
 const RECONNECT_BASE_MS = 1000;
@@ -110,10 +113,25 @@ function handleMessage(event) {
     case 'ack':
       break;
 
+    case 'command':
+      void handleCommand(msg);
+      break;
+
     default:
-      // Other message types arrive once #6 (command bus) lands.
       console.log('[claude-twin:offscreen] unhandled message:', msg.type);
   }
+}
+
+async function handleCommand(msg) {
+  if (!msg.id || !msg.action) {
+    console.warn('[claude-twin:offscreen] malformed command (missing id/action)');
+    return;
+  }
+  const { result, error } = await dispatchCommand(msg.action, msg.params || {});
+  const response = { type: 'response', id: msg.id };
+  if (error) response.error = error;
+  else response.result = result;
+  send(response);
 }
 
 function handleError() {

@@ -5,17 +5,28 @@
  * offscreen document is the only expected client (a desktop user has one
  * browser, one extension, one connection at a time).
  *
- * Scope for #5: accept connection, auth handshake, ping/pong keepalive.
- * The full command bus arrives in #6 once the protocol is finalised.
+ * Beyond the auth handshake from #5, this module implements the full
+ * command bus from #6:
+ *  - `sendCommand(action, params)` — request/response RPC, server → client,
+ *    correlated by a generated id, defaults to a 30s timeout.
+ *  - `onEvent(handler)` — subscribe to client → server pushes (monitor
+ *    results, twin logs, captions). Returns an unsubscribe fn.
  */
 
+import { EventEmitter } from 'node:events';
+import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
+  DEFAULT_COMMAND_TIMEOUT_MS,
   DEFAULT_WS_HOST,
   DEFAULT_WS_PORT,
   WS_PATH,
   type AnyMessage,
+  type CommandError,
+  type CommandMessage,
+  type EventMessage,
+  type ResponseMessage,
   type ServerMessage,
 } from './protocol.js';
 
@@ -28,6 +39,8 @@ export interface WsBridgeOptions {
    * (dev mode — sufficient for local single-user use).
    */
   token?: string | null;
+  /** Default command timeout in ms (override per-call via sendCommand opts). */
+  defaultCommandTimeoutMs?: number;
 }
 
 export interface WsBridgeStatus {
@@ -36,26 +49,74 @@ export interface WsBridgeStatus {
   connected: boolean;
   authenticated: boolean;
   extensionId: string | null;
+  pendingCommands: number;
+}
+
+export interface SendCommandOptions {
+  /** Override the default timeout for this single call. */
+  timeoutMs?: number;
+}
+
+export class CommandTimeoutError extends Error {
+  constructor(
+    public readonly action: string,
+    public readonly id: string,
+    public readonly timeoutMs: number,
+  ) {
+    super(`Command "${action}" (id=${id}) timed out after ${timeoutMs}ms`);
+    this.name = 'CommandTimeoutError';
+  }
+}
+
+export class CommandFailedError extends Error {
+  constructor(
+    public readonly action: string,
+    public readonly id: string,
+    public readonly cause: CommandError,
+  ) {
+    super(`Command "${action}" (id=${id}) failed: ${cause.message}`);
+    this.name = 'CommandFailedError';
+  }
+}
+
+export class BridgeNotConnectedError extends Error {
+  constructor(public readonly action: string) {
+    super(`Cannot send "${action}": no extension connected to the bridge`);
+    this.name = 'BridgeNotConnectedError';
+  }
+}
+
+interface PendingCommand {
+  action: string;
+  resolve: (result: unknown) => void;
+  reject: (err: Error) => void;
+  timer: NodeJS.Timeout;
 }
 
 const log = (msg: string): void => {
   process.stderr.write(`[claude-twin:ws] ${msg}\n`);
 };
 
-export class WsBridge {
+export class WsBridge extends EventEmitter {
   private readonly host: string;
   private readonly port: number;
   private readonly token: string | null;
+  private readonly defaultCommandTimeoutMs: number;
+
   private httpServer: Server | null = null;
   private wss: WebSocketServer | null = null;
   private client: WebSocket | null = null;
   private clientAuthenticated = false;
   private clientExtensionId: string | null = null;
 
+  private readonly pending = new Map<string, PendingCommand>();
+
   constructor(opts: WsBridgeOptions = {}) {
+    super();
     this.host = opts.host ?? DEFAULT_WS_HOST;
     this.port = opts.port ?? DEFAULT_WS_PORT;
     this.token = opts.token ?? null;
+    this.defaultCommandTimeoutMs = opts.defaultCommandTimeoutMs ?? DEFAULT_COMMAND_TIMEOUT_MS;
   }
 
   status(): WsBridgeStatus {
@@ -65,7 +126,68 @@ export class WsBridge {
       connected: this.client?.readyState === 1,
       authenticated: this.clientAuthenticated,
       extensionId: this.clientExtensionId,
+      pendingCommands: this.pending.size,
     };
+  }
+
+  isReady(): boolean {
+    return this.client?.readyState === 1 && this.clientAuthenticated;
+  }
+
+  /**
+   * Send a command to the connected extension and resolve with the result.
+   *
+   * Rejects with:
+   *  - `BridgeNotConnectedError` if no client is connected.
+   *  - `CommandTimeoutError` if no response arrives in time.
+   *  - `CommandFailedError` if the extension returns `{ error: ... }`.
+   */
+  sendCommand<R = unknown>(
+    action: string,
+    params: Record<string, unknown> = {},
+    opts: SendCommandOptions = {},
+  ): Promise<R> {
+    if (!this.isReady() || !this.client) {
+      return Promise.reject(new BridgeNotConnectedError(action));
+    }
+
+    const id = randomUUID();
+    const timeoutMs = opts.timeoutMs ?? this.defaultCommandTimeoutMs;
+
+    return new Promise<R>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (this.pending.delete(id)) {
+          reject(new CommandTimeoutError(action, id, timeoutMs));
+        }
+      }, timeoutMs);
+
+      this.pending.set(id, {
+        action,
+        resolve: resolve as (result: unknown) => void,
+        reject,
+        timer,
+      });
+
+      const cmd: CommandMessage = { type: 'command', id, action, params };
+      try {
+        this.client!.send(JSON.stringify(cmd));
+      } catch (err) {
+        if (this.pending.delete(id)) {
+          clearTimeout(timer);
+          reject(err instanceof Error ? err : new Error(String(err)));
+        }
+      }
+    });
+  }
+
+  /**
+   * Subscribe to inbound `event` messages from the extension. Returns an
+   * unsubscribe function. The handler is called with the full event message
+   * (`source`, `eventType`, `data`, `timestamp`).
+   */
+  onEvent(handler: (msg: EventMessage) => void): () => void {
+    this.on('event', handler);
+    return () => this.off('event', handler);
   }
 
   async start(): Promise<void> {
@@ -99,6 +221,8 @@ export class WsBridge {
   }
 
   async stop(): Promise<void> {
+    this.failAllPending('bridge stopping');
+
     if (this.client && this.client.readyState <= 1) {
       this.client.close(1001, 'server shutting down');
     }
@@ -142,6 +266,7 @@ export class WsBridge {
     this.client = ws;
     this.clientAuthenticated = false;
     this.clientExtensionId = null;
+    this.failAllPending('client reconnected before response');
 
     ws.on('message', (data) => this.handleMessage(ws, data.toString()));
     ws.on('close', (code, reason) => {
@@ -149,6 +274,7 @@ export class WsBridge {
         this.client = null;
         this.clientAuthenticated = false;
         this.clientExtensionId = null;
+        this.failAllPending('client disconnected');
       }
       log(`client closed (code=${code}${reason.length ? `, reason=${reason.toString()}` : ''})`);
     });
@@ -189,7 +315,42 @@ export class WsBridge {
       return;
     }
 
-    log(`unhandled message type: ${msg.type}`);
+    if (msg.type === 'response') {
+      this.completePending(msg);
+      return;
+    }
+
+    if (msg.type === 'event') {
+      this.emit('event', msg as EventMessage);
+      return;
+    }
+
+    log(`unhandled message type: ${(msg as { type: string }).type}`);
+  }
+
+  private completePending(msg: ResponseMessage): void {
+    const pending = this.pending.get(msg.id);
+    if (!pending) {
+      log(`response for unknown id=${msg.id}`);
+      return;
+    }
+    this.pending.delete(msg.id);
+    clearTimeout(pending.timer);
+
+    if (msg.error) {
+      pending.reject(new CommandFailedError(pending.action, msg.id, msg.error));
+    } else {
+      pending.resolve(msg.result);
+    }
+  }
+
+  private failAllPending(reason: string): void {
+    if (this.pending.size === 0) return;
+    for (const [id, p] of this.pending) {
+      clearTimeout(p.timer);
+      p.reject(new BridgeNotConnectedError(`${p.action} (${reason}, id=${id})`));
+    }
+    this.pending.clear();
   }
 
   private send(ws: WebSocket, msg: ServerMessage): void {
