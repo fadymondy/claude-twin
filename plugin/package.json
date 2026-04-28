@@ -1,0 +1,11 @@
+{
+  "name": "@claude-twin/plugin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Claude Code plugin manifest for claude-twin — auto-registers the MCP server and ships slash commands",
+  "license": "MIT",
+  "scripts": {
+    "build": "echo 'plugin is pure JSON + markdown — nothing to build'",
+    "typecheck": "echo 'no TS in plugin/'"
+  }
+}

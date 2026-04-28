@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+extension/icons/
+CHANGELOG.md
+LICENSE
+.github/ISSUE_TEMPLATE/
+.github/PULL_REQUEST_TEMPLATE.md

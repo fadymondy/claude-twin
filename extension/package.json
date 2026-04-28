@@ -1,0 +1,14 @@
+{
+  "name": "@claude-twin/extension",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Chrome MV3 extension for claude-twin — content scripts + offscreen WebSocket bridge",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --build --dry"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268"
+  }
+}
