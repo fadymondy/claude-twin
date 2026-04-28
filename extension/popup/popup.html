@@ -11,26 +11,63 @@
       <span id="version" class="muted"></span>
     </header>
 
-    <section class="status">
+    <nav class="tabs">
+      <button class="tab" data-tab="status">Status</button>
+      <button class="tab" data-tab="monitors">Monitors</button>
+      <button class="tab" data-tab="scripts">Scripts</button>
+      <button class="tab" data-tab="perms">Permissions</button>
+    </nav>
+
+    <section id="meeting-prompt" class="meeting-prompt hidden">
+      <p><strong id="meeting-platform">A meeting</strong> was detected.</p>
+      <p class="muted">Capture captions for transcription?</p>
+      <div class="actions">
+        <button id="meeting-approve">Allow</button>
+        <button id="meeting-deny" class="secondary">Deny</button>
+      </div>
+    </section>
+
+    <section data-pane="status" class="pane">
       <div class="row">
         <span class="label">MCP bridge</span>
         <span id="ws-status" class="value">…</span>
       </div>
       <div class="row">
+        <span class="label">Auth</span>
+        <span id="auth-status" class="value muted">…</span>
+      </div>
+      <div class="row">
         <span class="label">Alerts today</span>
-        <span id="alerts-today" class="value">…</span>
+        <span id="alerts-today" class="value">0</span>
+      </div>
+      <div class="toggles">
+        <label class="toggle">
+          <input type="checkbox" id="enabled" />
+          <span>Enabled</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="privacy" />
+          <span>Privacy mode</span>
+        </label>
       </div>
     </section>
 
-    <section class="toggles">
-      <label class="toggle">
-        <input type="checkbox" id="enabled" />
-        <span>Enabled</span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="privacy" />
-        <span>Privacy mode</span>
-      </label>
+    <section data-pane="monitors" class="pane hidden">
+      <div id="monitors-empty" class="empty muted">No active monitors.</div>
+      <ul id="monitors-list" class="list"></ul>
+    </section>
+
+    <section data-pane="scripts" class="pane hidden">
+      <div id="scripts-empty" class="empty muted">No dynamic scripts loaded.</div>
+      <ul id="scripts-list" class="list"></ul>
+    </section>
+
+    <section data-pane="perms" class="pane hidden">
+      <p class="muted">
+        Per-platform host permissions. Toggle on to let claude-twin observe a platform you're logged
+        into.
+      </p>
+      <ul id="perms-list" class="list"></ul>
     </section>
 
     <footer>
