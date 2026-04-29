@@ -37,32 +37,16 @@ jobs:
         run: npm -w @claude-twin/mcp-server run build
 
       # electron-builder's "installing production dependencies" step runs
-      # `npm install --production` inside `desktop/`, which prunes
-      # devDependencies — taking app-builder-bin (and its platform-specific
-      # binaries) with it, then immediately ENOENT'ing on the binary it
-      # just deleted. Pre-populating desktop/node_modules ourselves makes
-      # electron-builder see a populated appDir and skip its own install.
-      #
-      # Two complications:
-      # 1. `@claude-twin/mcp-server` is a workspace sibling, not on npm —
-      #    we copy it into desktop/node_modules first so the install can
-      #    resolve everything else from the registry without --workspaces.
-      # 2. `--workspaces=false` keeps npm from reaching up to the root
-      #    workspace and re-running root-level installs.
+      # `npm install --production` inside `desktop/` and prunes the
+      # workspace-hoisted devDeps from root — taking app-builder-bin
+      # with them and ENOENT'ing on the binary it just deleted.
+      # Pre-populating desktop/node_modules sidesteps that. The
+      # `@claude-twin/mcp-server` dep uses the `file:../mcp-server` spec
+      # in desktop/package.json so this install resolves locally without
+      # the registry.
       - name: Pre-populate desktop/node_modules
         shell: bash
         run: |
-          # Hand-stage the workspace sibling. Includes the dist/ tree built
-          # by the previous step so dynamic imports of
-          # @claude-twin/mcp-server/dist/... resolve at runtime.
-          mkdir -p desktop/node_modules/@claude-twin
-          rm -rf desktop/node_modules/@claude-twin/mcp-server
-          cp -R mcp-server desktop/node_modules/@claude-twin/mcp-server
-          # Drop the staged copy's own node_modules + lockfile so npm doesn't
-          # try to re-resolve them.
-          rm -rf desktop/node_modules/@claude-twin/mcp-server/node_modules
-          rm -f  desktop/node_modules/@claude-twin/mcp-server/package-lock.json
-
           cd desktop
           npm install --no-package-lock --no-fund --no-audit --workspaces=false
 
