@@ -134,8 +134,23 @@ async function handleOffscreenEvent(event, data) {
       await chrome.storage.local.set({ serverConfig: data });
       break;
     case 'ALERT': {
-      const store = await chrome.storage.local.get('alertsToday');
+      const store = await chrome.storage.local.get(['alertsToday', 'notificationsEnabled']);
       await chrome.storage.local.set({ alertsToday: (store.alertsToday || 0) + 1 });
+      if (store.notificationsEnabled !== false) {
+        const title = data?.title || 'claude-twin alert';
+        const message = data?.message || data?.body || 'New alert from your digital twin';
+        try {
+          await chrome.notifications.create({
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('icons/icon-128.png'),
+            title,
+            message: String(message).slice(0, 240),
+            priority: 1,
+          });
+        } catch (err) {
+          console.warn('[claude-twin] notifications.create failed:', err?.message);
+        }
+      }
       break;
     }
   }
@@ -152,6 +167,7 @@ async function handlePopupRequest(message, sendResponse) {
       'alertsToday',
       'authStatus',
       'authError',
+      'notificationsEnabled',
     ]);
     sendResponse({
       ok: true,
@@ -162,9 +178,16 @@ async function handlePopupRequest(message, sendResponse) {
         enabled: data.enabled !== false,
         privacyMode: !!data.privacyMode,
         alertsToday: data.alertsToday || 0,
+        notificationsEnabled: data.notificationsEnabled !== false,
         version: chrome.runtime.getManifest().version,
       },
     });
+    return;
+  }
+
+  if (action === 'setNotificationsEnabled') {
+    await chrome.storage.local.set({ notificationsEnabled: !!message.value });
+    sendResponse({ ok: true });
     return;
   }
 
