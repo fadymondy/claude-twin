@@ -8,6 +8,7 @@ import { registerDomTools } from './tools/dom.js';
 import { registerSearchTool } from './tools/search.js';
 import { registerScriptTools } from './tools/scripts.js';
 import { registerMonitorTools } from './tools/monitors.js';
+import { registerSelftestTool } from './tools/selftest.js';
 import { MonitorRegistry } from './state/monitors.js';
 
 export const SERVER_NAME = 'claude-twin';
@@ -43,6 +44,7 @@ export function createMcpServer(bridge: WsBridge): McpServer {
 
   const monitors = new MonitorRegistry(bridge);
   registerMonitorTools(server, monitors);
+  registerSelftestTool(server, monitors, bridge);
 
   return server;
 }

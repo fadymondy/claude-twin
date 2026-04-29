@@ -1,23 +1,25 @@
 /**
  * Desktop IPC bridge: forwards bridge / monitor / log events to every
  * BrowserWindow so the renderer can render them live without ever
- * touching the WS bridge directly.
- *
- * Channels (renderer ← main):
- *   twin/bridge-status    { listening, connected, authenticated, extensionId, url, pendingCommands }
- *   twin/event            { source, eventType, data, timestamp }
- *   twin/log              { ts, level, source, message }
- *
- * Channels (renderer → main, ipcRenderer.invoke):
- *   twin/get-status       → current bridge status snapshot
- *   twin/get-recent-events { limit? } → ring buffer
- *   twin/get-recent-logs   { limit? } → ring buffer
+ * touching the WS bridge directly. Also persists every event + log into
+ * a sqlite db (#85), exposes Settings panel actions (#77/#78), and
+ * backup/export endpoints (#90).
  */
 
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, dialog, ipcMain } from 'electron';
+import { promises as fs } from 'node:fs';
 import type { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
 import { getCliState, installCli, uninstallCli } from './cli-install.js';
 import { readToken, rotateToken } from './token-store.js';
+import {
+  clearHistory,
+  exportAll,
+  importPayload,
+  queryEvents,
+  queryLogs,
+  recordEvent,
+  recordLog,
+} from './event-store.js';
 
 export interface TwinLogEntry {
   ts: number;
@@ -48,6 +50,7 @@ export function pushLog(entry: TwinLogEntry): void {
   recentLogs.push(entry);
   while (recentLogs.length > RING) recentLogs.shift();
   broadcast('twin/log', entry);
+  recordLog(entry);
 }
 
 export function attachIpc(bridge: WsBridge): void {
@@ -61,6 +64,7 @@ export function attachIpc(bridge: WsBridge): void {
     recentEvents.push(snap);
     while (recentEvents.length > RING) recentEvents.shift();
     broadcast('twin/event', snap);
+    recordEvent(snap);
 
     pushLog({
       ts: evt.timestamp || Date.now(),
@@ -80,7 +84,6 @@ export function attachIpc(bridge: WsBridge): void {
     broadcast('twin/bridge-status', bridge.status());
   });
 
-  // Periodic status broadcast so the renderer's connection light stays fresh.
   setInterval(() => broadcast('twin/bridge-status', bridge.status()), 2_000);
 
   ipcMain.handle('twin/get-status', () => bridge.status());
@@ -93,7 +96,7 @@ export function attachIpc(bridge: WsBridge): void {
     return recentLogs.slice(-limit);
   });
 
-  // Settings panel
+  // Settings — CLI installer + bridge token
   ipcMain.handle('twin/cli-state', () => getCliState());
   ipcMain.handle('twin/cli-install', async () => {
     try {
@@ -112,4 +115,51 @@ export function attachIpc(bridge: WsBridge): void {
   });
   ipcMain.handle('twin/get-token', () => readToken());
   ipcMain.handle('twin/rotate-token', async () => rotateToken());
+
+  // History — sqlite-backed, deeper than the in-memory ring buffer
+  ipcMain.handle('twin/history-events', (_e, opts?: Parameters<typeof queryEvents>[0]) =>
+    queryEvents(opts ?? {}),
+  );
+  ipcMain.handle('twin/history-logs', (_e, opts?: Parameters<typeof queryLogs>[0]) =>
+    queryLogs(opts ?? {}),
+  );
+  ipcMain.handle('twin/history-clear', () => clearHistory());
+
+  // Backup / export
+  ipcMain.handle('twin/history-export', async () => {
+    const result = await dialog.showSaveDialog({
+      title: 'Export claude-twin history',
+      defaultPath: `claude-twin-history-${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePath) return { ok: false, canceled: true };
+    try {
+      const payload = exportAll();
+      await fs.writeFile(result.filePath, JSON.stringify(payload, null, 2), 'utf8');
+      return {
+        ok: true,
+        path: result.filePath,
+        events: payload.events.length,
+        logs: payload.logs.length,
+      };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+  ipcMain.handle('twin/history-import', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Import claude-twin history',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) return { ok: false, canceled: true };
+    try {
+      const raw = await fs.readFile(result.filePaths[0], 'utf8');
+      const payload = JSON.parse(raw);
+      const counts = importPayload(payload);
+      return { ok: true, ...counts };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
 }

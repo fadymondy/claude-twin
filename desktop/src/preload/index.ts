@@ -34,4 +34,13 @@ contextBridge.exposeInMainWorld('claudeTwin', {
   cliUninstall: () => ipcRenderer.invoke('twin/cli-uninstall'),
   getToken: () => ipcRenderer.invoke('twin/get-token'),
   rotateToken: () => ipcRenderer.invoke('twin/rotate-token'),
+
+  // History
+  historyEvents: (opts?: { source?: string; since?: number; until?: number; limit?: number }) =>
+    ipcRenderer.invoke('twin/history-events', opts),
+  historyLogs: (opts?: { level?: string; since?: number; limit?: number }) =>
+    ipcRenderer.invoke('twin/history-logs', opts),
+  historyClear: () => ipcRenderer.invoke('twin/history-clear'),
+  historyExport: () => ipcRenderer.invoke('twin/history-export'),
+  historyImport: () => ipcRenderer.invoke('twin/history-import'),
 });
