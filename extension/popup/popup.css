@@ -244,3 +244,43 @@ footer a {
 footer a:hover {
   text-decoration: underline;
 }
+
+.token-row {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.token-row .label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.token-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.token-input-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.token-input-row button {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 10px;
+}

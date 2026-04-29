@@ -2,7 +2,7 @@
   "name": "@claude-twin/vscode-extension",
   "displayName": "claude-twin",
   "description": "Drive the claude-twin desktop app — read / send / click / watch on 17 web apps — from inside VSCode.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MIT",
   "publisher": "fadymondy",

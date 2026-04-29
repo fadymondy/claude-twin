@@ -29,6 +29,10 @@ const els = {
   updateVersion: document.getElementById('update-version'),
   updateLink: document.getElementById('update-link'),
   updateRecheck: document.getElementById('update-recheck'),
+  tokenInput: document.getElementById('token-input'),
+  tokenReveal: document.getElementById('token-reveal'),
+  tokenSave: document.getElementById('token-save'),
+  tokenHint: document.getElementById('token-hint'),
 };
 
 const PLATFORM_ORIGINS = [
@@ -222,6 +226,28 @@ els.privacy.addEventListener('change', async (e) => {
   void renderStatus();
 });
 
+async function renderToken() {
+  const { token } = await chrome.storage.local.get('token');
+  els.tokenInput.value = token || '';
+}
+
+els.tokenReveal?.addEventListener('click', () => {
+  els.tokenInput.type = els.tokenInput.type === 'password' ? 'text' : 'password';
+});
+
+els.tokenSave?.addEventListener('click', async () => {
+  const value = els.tokenInput.value.trim();
+  const response = await send('setToken', { value });
+  if (response?.ok) {
+    els.tokenHint.textContent = value
+      ? 'Saved. Reconnecting…'
+      : 'Cleared. Bridge auth disabled (only works if desktop has no token).';
+    setTimeout(() => void renderStatus(), 800);
+  } else {
+    els.tokenHint.textContent = `Save failed: ${response?.error || 'unknown error'}`;
+  }
+});
+
 function formatAgo(ms) {
   const sec = Math.floor(ms / 1000);
   if (sec < 60) return `${sec}s ago`;
@@ -257,6 +283,7 @@ els.updateRecheck?.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', async () => {
   activateTab('status');
   await renderStatus();
+  await renderToken();
   await renderMeetingPrompt();
   await renderUpdateBanner();
 });

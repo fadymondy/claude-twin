@@ -2,7 +2,7 @@
   "$schema": "https://schemas.claude.com/claude-code/plugin.json",
   "name": "claude-twin",
   "description": "Drive 17 web apps (Gmail, Slack, WhatsApp, Discord, Telegram, X, GitHub, Linear, Jira, GCal, Cal.com, Google Meet, Zoom, GCP, Claude.ai, OpenAI, Perplexity) from inside a Claude Code conversation. Uses a local Chrome extension + the claude-twin desktop app — nothing leaves your machine.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Fady Mondy",
     "email": "info@3x1.io",

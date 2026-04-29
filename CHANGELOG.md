@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] — 2026-04-29
+## [0.1.1] — 2026-04-29
+
+Patch release fixing three v0.1.0 install-day defects.
+
+### Fixed
+
+- **Desktop**: `claude-twin-mcp` shim was packaged inside `app.asar` instead of `Resources/shim/`, so the symlink the first-launch installer dropped into `~/.local/bin` pointed at a path that didn't exist. The symlink existed but `which claude-twin-mcp` failed and Claude Code's MCP discovery couldn't reach the server. Moved `shim/` to `extraResources` in `desktop/electron-builder.yml` so it lands at `Contents/Resources/shim/` outside the asar archive.
+- **Plugin**: `claude plugin install fadymondy/claude-twin` failed because the manifest lived at `plugin/.claude-plugin/plugin.json` but the marketplace resolver expects `.claude-plugin/marketplace.json` at the repo root. Added a root marketplace.json that references the existing `plugin/` directory — no need to relocate the plugin sources.
+- **Extension**: the popup's Status tab had no token field, so when the desktop bridge required a token (always — `ensureToken()` generates one on first launch) the WebSocket auth failed silently with close code 4401 and the offscreen reconnected indefinitely with the same wrong (or absent) token. Added a token input + Save button to the popup; the offscreen now force-reconnects on token change instead of waiting up to 30 s on the existing backoff.
 
 First public release. Five surfaces — Chrome extension, MCP server, Electron desktop app, Claude Code plugin, VSCode extension — installable via `.dmg` / `.exe` / `.AppImage` + `claude plugin install`.
 

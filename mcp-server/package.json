@@ -1,6 +1,6 @@
 {
   "name": "@claude-twin/mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Local MCP server hosting the WebSocket bridge to the claude-twin Chrome extension",
   "license": "MIT",
