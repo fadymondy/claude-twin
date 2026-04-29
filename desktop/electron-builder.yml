@@ -17,8 +17,13 @@ mac:
       arch:
         - arm64
         - x64
-  hardenedRuntime: true
+  # Until MAC_CSC_LINK + APPLE_ID secrets are configured, builds are
+  # ad-hoc signed only. hardenedRuntime requires real signing for the
+  # app to launch. Override per-build via `--config.mac.hardenedRuntime=true
+  # --config.mac.identity=auto` once Developer ID is set.
+  hardenedRuntime: false
   gatekeeperAssess: false
+  identity: null
 win:
   target:
     - target: nsis
