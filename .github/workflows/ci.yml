@@ -61,6 +61,27 @@ jobs:
       - name: Build desktop renderer + main
         run: npm -w @claude-twin/desktop run build
 
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Build mcp-server
+        run: npm -w @claude-twin/mcp-server run build
+
+      - name: Run tests
+        run: npm -w @claude-twin/mcp-server run test
+
   package-extension:
     name: extension zip
     runs-on: ubuntu-latest
