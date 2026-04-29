@@ -4,7 +4,11 @@
   "private": true,
   "description": "Electron desktop app — bundles the MCP server and WS bridge, renders live twin events",
   "license": "MIT",
+  "author": "Fady Mondy <info@3x1.io>",
   "main": "out/main/index.js",
+  "bin": {
+    "claude-twin-mcp": "shim/claude-twin-mcp.cjs"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
@@ -25,7 +29,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "electron": "^33.0.2",
+    "electron": "33.4.11",
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
     "vite": "^5.4.10"
