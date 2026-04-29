@@ -1,0 +1,94 @@
+{
+  "name": "@claude-twin/vscode-extension",
+  "displayName": "claude-twin",
+  "description": "Drive the claude-twin desktop app — read / send / click / watch on 17 web apps — from inside VSCode.",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "publisher": "fadymondy",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=20"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude-twin",
+    "mcp",
+    "browser",
+    "automation"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeTwin.checkStatus",
+        "title": "claude-twin: Check status",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.runTool",
+        "title": "claude-twin: Run a tool…",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.listTabs",
+        "title": "claude-twin: List browser tabs",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.openUrl",
+        "title": "claude-twin: Open URL in browser",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.search",
+        "title": "claude-twin: Google search",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.registerMonitor",
+        "title": "claude-twin: Register a monitor",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.recentEvents",
+        "title": "claude-twin: Show recent twin_log events",
+        "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.reconnect",
+        "title": "claude-twin: Reconnect to desktop app",
+        "category": "claude-twin"
+      }
+    ],
+    "configuration": {
+      "title": "claude-twin",
+      "properties": {
+        "claudeTwin.shimCommand": {
+          "type": "string",
+          "default": "claude-twin-mcp",
+          "description": "Path to the claude-twin-mcp shim binary. Defaults to PATH lookup; set to an absolute path if the desktop app's bin isn't on PATH."
+        },
+        "claudeTwin.autoConnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically connect to the desktop app on VSCode startup."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0"
+  }
+}

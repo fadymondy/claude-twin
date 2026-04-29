@@ -17,14 +17,15 @@
     "extension",
     "mcp-server",
     "plugin",
-    "desktop"
+    "desktop",
+    "vscode-extension"
   ],
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --build && npm -w @claude-twin/desktop run typecheck",
+    "typecheck": "tsc --build && npm -w @claude-twin/desktop run typecheck && npm -w @claude-twin/vscode-extension run typecheck",
     "build": "npm run --workspaces --if-present build",
     "test": "npm run --workspaces --if-present test",
     "clean": "tsc --build --clean && rimraf '*/dist'"
