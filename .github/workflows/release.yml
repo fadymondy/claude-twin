@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,11 +33,51 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Defensive: force-rebuild app-builder-bin so its prebuilt binaries
-      # land on disk even if npm ci skipped them. Cheap (no compile —
-      # the binaries ship inside the npm tarball).
-      - name: Ensure app-builder-bin binaries
-        run: npm rebuild app-builder-bin
+      - name: Diagnose app-builder-bin
+        shell: bash
+        run: |
+          echo '== root node_modules/app-builder-bin =='
+          ls -la node_modules/app-builder-bin/ || true
+          echo '== mac =='
+          ls -la node_modules/app-builder-bin/mac/ 2>&1 || true
+          echo '== linux/x64 =='
+          ls -la node_modules/app-builder-bin/linux/x64/ 2>&1 || true
+          echo '== win/x64 =='
+          ls -la node_modules/app-builder-bin/win/x64/ 2>&1 || true
+          echo '== desktop/node_modules/electron-builder =='
+          ls -la desktop/node_modules/electron-builder 2>&1 | head -3 || true
+          ls -la desktop/node_modules/.bin/ 2>&1 | head -10 || true
+          echo '== which electron-builder =='
+          (cd desktop && node -e 'console.log(require.resolve("app-builder-bin/index.js"))') || true
+          echo '== file size of expected binary =='
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            ls -la node_modules/app-builder-bin/mac/app-builder_arm64 2>&1 || true
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            ls -la node_modules/app-builder-bin/win/x64/app-builder.exe 2>&1 || true
+          else
+            ls -la node_modules/app-builder-bin/linux/x64/app-builder 2>&1 || true
+          fi
+
+      # If the binary really is missing, reinstall just app-builder-bin
+      # locally into desktop/node_modules to bypass any workspace hoist issue.
+      - name: Recover app-builder-bin if missing
+        shell: bash
+        run: |
+          MISSING=0
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            [ ! -f node_modules/app-builder-bin/mac/app-builder_arm64 ] && MISSING=1
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            [ ! -f node_modules/app-builder-bin/win/x64/app-builder.exe ] && MISSING=1
+          else
+            [ ! -f node_modules/app-builder-bin/linux/x64/app-builder ] && MISSING=1
+          fi
+          if [ "$MISSING" = "1" ]; then
+            echo 'app-builder-bin binary missing — reinstalling fresh'
+            rm -rf node_modules/app-builder-bin
+            npm install app-builder-bin --no-save --workspace-root --no-fund --no-audit
+          else
+            echo 'app-builder-bin binary present'
+          fi
 
       - name: Build mcp-server
         run: npm -w @claude-twin/mcp-server run build
