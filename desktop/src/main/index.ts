@@ -6,18 +6,22 @@
  *   - embeds the @claude-twin/mcp-server WsBridge directly so the user
  *     doesn't need a separate Node install
  *   - hides the dock icon on macOS so we live in the menubar by default
+ *
+ * mcp-server is `"type":"module"` ESM. Electron's main process here is CJS,
+ * so we pull in WsBridge via an `await import(...)` inside the async
+ * whenReady handler — Node CJS can dynamic-import ESM, just not statically.
  */
 
 import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
-import { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
+import type { WsBridge as WsBridgeT } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
 import { createTray, type TrayApi } from './tray.js';
 import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
 import { attachIpc, pushLog } from './ipc.js';
 import { startAutoUpdate } from './auto-update.js';
 
 let mainWindow: BrowserWindow | null = null;
-let bridge: WsBridge | null = null;
+let bridge: WsBridgeT | null = null;
 let trayApi: TrayApi | null = null;
 let mcpSocket: McpSocketHost | null = null;
 
@@ -70,7 +74,6 @@ app.whenReady().then(async () => {
       if (!mainWindow) mainWindow = createWindow();
       mainWindow.show();
       mainWindow.focus();
-      // Settings UI lands as a route in #45.
       mainWindow.webContents.send('navigate', '/settings');
     },
     onQuit: () => {
@@ -79,6 +82,7 @@ app.whenReady().then(async () => {
     },
   });
 
+  const { WsBridge } = await import('@claude-twin/mcp-server/dist/bridge/ws-host.js');
   bridge = new WsBridge({
     token: process.env.CLAUDE_TWIN_WS_TOKEN ?? null,
   });
