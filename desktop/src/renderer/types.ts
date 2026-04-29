@@ -21,6 +21,12 @@ export interface TwinLog {
   message: string;
 }
 
+export interface CliState {
+  installed: boolean;
+  target: string | null;
+  source: string;
+}
+
 export interface ClaudeTwinApi {
   version: string;
   getStatus: () => Promise<BridgeStatus>;
@@ -30,6 +36,11 @@ export interface ClaudeTwinApi {
   onEvent: (h: (e: TwinEvent) => void) => () => void;
   onLog: (h: (l: TwinLog) => void) => () => void;
   onNavigate: (h: (route: string) => void) => () => void;
+  cliState: () => Promise<CliState>;
+  cliInstall: () => Promise<{ ok: boolean; state?: CliState; error?: string }>;
+  cliUninstall: () => Promise<{ ok: boolean; error?: string }>;
+  getToken: () => Promise<string | null>;
+  rotateToken: () => Promise<string>;
 }
 
 declare global {

@@ -17,6 +17,8 @@ import { createTray, type TrayApi } from './tray.js';
 import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
 import { attachIpc, pushLog } from './ipc.js';
 import { startAutoUpdate, manualCheckForUpdates } from './auto-update.js';
+import { ensureToken } from './token-store.js';
+import { maybePromptFirstLaunchInstall } from './cli-install.js';
 
 let mainWindow: BrowserWindow | null = null;
 let bridge: WsBridgeT | null = null;
@@ -87,10 +89,9 @@ app.whenReady().then(async () => {
   });
 
   try {
+    const token = process.env.CLAUDE_TWIN_WS_TOKEN ?? (await ensureToken());
     const { WsBridge } = await import('@claude-twin/mcp-server/dist/bridge/ws-host.js');
-    bridge = new WsBridge({
-      token: process.env.CLAUDE_TWIN_WS_TOKEN ?? null,
-    });
+    bridge = new WsBridge({ token });
 
     bridge.on('ready', () => trayApi?.setStatus('green'));
     attachIpc(bridge);
@@ -110,6 +111,17 @@ app.whenReady().then(async () => {
   } catch (err) {
     console.error('[claude-twin] start failed:', err);
     trayApi?.setStatus('red');
+    pushLog({
+      ts: Date.now(),
+      level: 'error',
+      source: 'bridge',
+      message: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // Prompt about CLI install once everything else is up.
+  if (app.isPackaged) {
+    void maybePromptFirstLaunchInstall();
   }
 });
 
