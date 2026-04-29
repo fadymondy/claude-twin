@@ -23,15 +23,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # Intentionally NOT caching npm: setup-node's cache key isn't
+          # platform-aware enough for binary deps like app-builder-bin
+          # (whose per-OS executables would get clobbered across mac/win/
+          # linux runners, manifesting as "spawn .../app-builder ENOENT"
+          # during electron-builder's package step).
 
-      # Don't pass --workspaces flag — npm 10/11 already installs workspaces
-      # by default, and `--workspaces --include-workspace-root` skips
-      # transitive postinstall lifecycle scripts (notably for app-builder-bin
-      # which prebuilds platform-specific electron-builder helpers, leading
-      # to "spawn .../app-builder ENOENT" at package time).
       - name: Install dependencies
         run: npm ci
+
+      # Defensive: force-rebuild app-builder-bin so its prebuilt binaries
+      # land on disk even if npm ci skipped them. Cheap (no compile —
+      # the binaries ship inside the npm tarball).
+      - name: Ensure app-builder-bin binaries
+        run: npm rebuild app-builder-bin
 
       - name: Build mcp-server
         run: npm -w @claude-twin/mcp-server run build
@@ -91,6 +96,7 @@ jobs:
       - name: Install + build
         run: |
           npm ci
+          npm rebuild app-builder-bin || true
           npm -w @claude-twin/mcp-server run build
       - name: Publish to npm (skip if NODE_AUTH_TOKEN missing)
         env:
