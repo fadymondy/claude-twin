@@ -1,27 +1,40 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { BridgeStatus, TwinEvent, TwinLog } from './types';
+import { Settings } from './Settings';
 
 type Tab = 'bridge' | 'events' | 'monitors' | 'logs';
+type Route = 'main' | 'settings';
 
 export function App(): React.ReactElement {
+  const [route, setRoute] = useState<Route>('main');
   const [tab, setTab] = useState<Tab>('bridge');
   const [status, setStatus] = useState<BridgeStatus | null>(null);
   const [events, setEvents] = useState<TwinEvent[]>([]);
   const [logs, setLogs] = useState<TwinLog[]>([]);
   const [filter, setFilter] = useState<string>('');
+  const [errorsOnly, setErrorsOnly] = useState<boolean>(false);
+  const [bannerError, setBannerError] = useState<string | null>(null);
 
   useEffect(() => {
     void window.claudeTwin.getStatus().then(setStatus);
     void window.claudeTwin.getRecentEvents().then(setEvents);
     void window.claudeTwin.getRecentLogs().then(setLogs);
 
-    const offStatus = window.claudeTwin.onBridgeStatus((s) => setStatus(s));
+    const offStatus = window.claudeTwin.onBridgeStatus((s) => {
+      setStatus(s);
+      if (!s.listening) setBannerError('WS bridge is not listening — see logs.');
+      else setBannerError(null);
+    });
     const offEvent = window.claudeTwin.onEvent((e) =>
       setEvents((prev) => [...prev.slice(-499), e]),
     );
-    const offLog = window.claudeTwin.onLog((l) => setLogs((prev) => [...prev.slice(-499), l]));
-    const offNav = window.claudeTwin.onNavigate((route) => {
-      if (route === '/settings') setTab('bridge');
+    const offLog = window.claudeTwin.onLog((l) => {
+      setLogs((prev) => [...prev.slice(-499), l]);
+      if (l.level === 'error') setBannerError(l.message);
+    });
+    const offNav = window.claudeTwin.onNavigate((r) => {
+      if (r === '/settings') setRoute('settings');
+      else if (r === '/main' || r === '/') setRoute('main');
     });
     return () => {
       offStatus();
@@ -39,6 +52,11 @@ export function App(): React.ReactElement {
     );
   }, [events, filter]);
 
+  const filteredLogs = useMemo(
+    () => (errorsOnly ? logs.filter((l) => l.level !== 'info') : logs),
+    [logs, errorsOnly],
+  );
+
   const monitorBuckets = useMemo(() => {
     const map = new Map<string, TwinEvent[]>();
     for (const e of events) {
@@ -50,12 +68,29 @@ export function App(): React.ReactElement {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [events]);
 
+  if (route === 'settings') {
+    return <Settings onBack={() => setRoute('main')} />;
+  }
+
   return (
     <main>
       <header>
         <h1>claude-twin</h1>
         <span className="version">v{window.claudeTwin?.version ?? '0.0.0'}</span>
       </header>
+
+      {bannerError && (
+        <div className="error-banner" role="alert">
+          <span className="error-banner-text">{bannerError}</span>
+          <button
+            className="error-banner-dismiss"
+            onClick={() => setBannerError(null)}
+            aria-label="dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <nav className="tabs">
         {(['bridge', 'events', 'monitors', 'logs'] as Tab[]).map((t) => (
@@ -65,7 +100,9 @@ export function App(): React.ReactElement {
         ))}
       </nav>
 
-      {tab === 'bridge' && <BridgePane status={status} />}
+      {tab === 'bridge' && (
+        <BridgePane status={status} onOpenSettings={() => setRoute('settings')} />
+      )}
 
       {tab === 'events' && (
         <EventsPane events={filteredEvents} filter={filter} onFilter={setFilter} />
@@ -73,12 +110,24 @@ export function App(): React.ReactElement {
 
       {tab === 'monitors' && <MonitorsPane buckets={monitorBuckets} />}
 
-      {tab === 'logs' && <LogsPane logs={logs} />}
+      {tab === 'logs' && (
+        <LogsPane
+          logs={filteredLogs}
+          errorsOnly={errorsOnly}
+          onToggleErrorsOnly={() => setErrorsOnly((v) => !v)}
+        />
+      )}
     </main>
   );
 }
 
-function BridgePane({ status }: { status: BridgeStatus | null }): React.ReactElement {
+function BridgePane({
+  status,
+  onOpenSettings,
+}: {
+  status: BridgeStatus | null;
+  onOpenSettings: () => void;
+}): React.ReactElement {
   if (!status) return <p className="muted">loading…</p>;
   return (
     <section className="pane">
@@ -97,6 +146,9 @@ function BridgePane({ status }: { status: BridgeStatus | null }): React.ReactEle
       />
       <Row label="Extension id" value={status.extensionId ?? '—'} />
       <Row label="Pending commands" value={String(status.pendingCommands)} />
+      <div className="settings-actions">
+        <button onClick={onOpenSettings}>Open Settings…</button>
+      </div>
     </section>
   );
 }
@@ -195,9 +247,23 @@ function MonitorsPane({ buckets }: { buckets: [string, TwinEvent[]][] }): React.
   );
 }
 
-function LogsPane({ logs }: { logs: TwinLog[] }): React.ReactElement {
+function LogsPane({
+  logs,
+  errorsOnly,
+  onToggleErrorsOnly,
+}: {
+  logs: TwinLog[];
+  errorsOnly: boolean;
+  onToggleErrorsOnly: () => void;
+}): React.ReactElement {
   return (
     <section className="pane">
+      <div className="logs-toolbar">
+        <label className="toggle">
+          <input type="checkbox" checked={errorsOnly} onChange={onToggleErrorsOnly} />
+          <span>errors only</span>
+        </label>
+      </div>
       {logs.length === 0 ? (
         <p className="muted">no logs yet</p>
       ) : (

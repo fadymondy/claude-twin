@@ -16,6 +16,8 @@
 
 import { BrowserWindow, ipcMain } from 'electron';
 import type { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
+import { getCliState, installCli, uninstallCli } from './cli-install.js';
+import { readToken, rotateToken } from './token-store.js';
 
 export interface TwinLogEntry {
   ts: number;
@@ -90,4 +92,24 @@ export function attachIpc(bridge: WsBridge): void {
     const limit = Math.min(Math.max(opts?.limit ?? 100, 1), RING);
     return recentLogs.slice(-limit);
   });
+
+  // Settings panel
+  ipcMain.handle('twin/cli-state', () => getCliState());
+  ipcMain.handle('twin/cli-install', async () => {
+    try {
+      return { ok: true, state: await installCli() };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+  ipcMain.handle('twin/cli-uninstall', async () => {
+    try {
+      await uninstallCli();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+  ipcMain.handle('twin/get-token', () => readToken());
+  ipcMain.handle('twin/rotate-token', async () => rotateToken());
 }

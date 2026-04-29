@@ -202,3 +202,105 @@ header .version {
   color: var(--warn);
   font-weight: 600;
 }
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid var(--warn);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.error-banner-text {
+  flex: 1;
+  color: var(--warn);
+  font-size: 13px;
+}
+
+.error-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--warn);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.settings-section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.settings-section h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.settings-section p {
+  margin: 4px 0 12px 0;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-actions button,
+.error-banner button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg, #fff);
+  cursor: pointer;
+  font: inherit;
+}
+
+.settings-actions button.secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+.settings-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.logs-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.logs-toolbar .toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  background: var(--hover);
+  padding: 0 4px;
+  border-radius: 3px;
+}
