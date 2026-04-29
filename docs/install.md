@@ -16,6 +16,14 @@ claude-twin is three things working together:
 
 After install, launch the app. It lives in your **system tray** (top-right menubar on macOS, system tray on Windows / Linux). Click the icon to see status.
 
+> **macOS: `"claude-twin" is damaged and can't be opened.`** v0.1.0 ships unsigned (Apple Developer ID signing lands in v0.2). The "damaged" message is Gatekeeper rejecting the quarantine xattr Safari/Chrome added on download — the app is fine. Strip it once after dragging to `/Applications`:
+>
+> ```sh
+> xattr -cr /Applications/claude-twin.app
+> ```
+>
+> Then re-open from Launchpad or Finder.
+
 ### Build from source
 
 ```sh
@@ -86,11 +94,12 @@ The result should show `listening: true, connected: true, authenticated: true`. 
 
 ## Troubleshooting
 
-| Symptom                                | Cause                                                                  | Fix                                                                                                                                                                                                          |
-| -------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `claude-twin-mcp: command not found`   | Desktop app didn't install the bin into PATH                           | macOS: `ln -s "/Applications/claude-twin.app/Contents/Resources/shim/claude-twin-mcp.cjs" /usr/local/bin/claude-twin-mcp`. Linux: AppImage extract. Windows: ensure the installer's PATH option was checked. |
-| Tray icon stays red                    | WS bridge couldn't bind to `127.0.0.1:9997`                            | Quit any other claude-twin instance, or set `CLAUDE_TWIN_WS_PORT=9998` before launching.                                                                                                                     |
-| Tray icon stays amber                  | Bridge listening but extension not connected                           | Open Chrome with the extension loaded and pinned. Check the **Status** tab in the popup.                                                                                                                     |
-| Popup shows `auth fail: invalid token` | `CLAUDE_TWIN_WS_TOKEN` set in the desktop env but not in the extension | In the popup's Status tab there's a token field — paste the same value.                                                                                                                                      |
+| Symptom                                                | Cause                                                                  | Fix                                                                                                                                                                                                          |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS: `"claude-twin" is damaged and can't be opened.` | Unsigned build + quarantine xattr from browser download                | Run `xattr -cr /Applications/claude-twin.app` once after install. Permanent fix lands in v0.2 with an Apple Developer ID.                                                                                    |
+| `claude-twin-mcp: command not found`                   | Desktop app didn't install the bin into PATH                           | macOS: `ln -s "/Applications/claude-twin.app/Contents/Resources/shim/claude-twin-mcp.cjs" /usr/local/bin/claude-twin-mcp`. Linux: AppImage extract. Windows: ensure the installer's PATH option was checked. |
+| Tray icon stays red                                    | WS bridge couldn't bind to `127.0.0.1:9997`                            | Quit any other claude-twin instance, or set `CLAUDE_TWIN_WS_PORT=9998` before launching.                                                                                                                     |
+| Tray icon stays amber                                  | Bridge listening but extension not connected                           | Open Chrome with the extension loaded and pinned. Check the **Status** tab in the popup.                                                                                                                     |
+| Popup shows `auth fail: invalid token`                 | `CLAUDE_TWIN_WS_TOKEN` set in the desktop env but not in the extension | In the popup's Status tab there's a token field — paste the same value.                                                                                                                                      |
 
 See [Per-platform notes](./platforms.md) for site-specific setup tips and [MCP tool reference](./tools.md) for the full tool surface.
