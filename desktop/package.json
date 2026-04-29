@@ -1,6 +1,6 @@
 {
   "name": "@claude-twin/desktop",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Electron desktop app — bundles the MCP server and WS bridge, renders live twin events",
   "license": "MIT",
@@ -20,7 +20,7 @@
     "package:linux": "electron-vite build && electron-builder --linux --publish never"
   },
   "dependencies": {
-    "@claude-twin/mcp-server": "0.0.0",
+    "@claude-twin/mcp-server": "0.1.0",
     "better-sqlite3": "^11.3.0",
     "electron-updater": "^6.3.9",
     "react": "^18.3.1",

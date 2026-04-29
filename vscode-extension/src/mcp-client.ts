@@ -120,7 +120,7 @@ export class McpClient {
     await this.request('initialize', {
       protocolVersion: '2025-06-18',
       capabilities: {},
-      clientInfo: { name: 'claude-twin-vscode', version: '0.0.0' },
+      clientInfo: { name: 'claude-twin-vscode', version: '0.1.0' },
     });
     this.notify('notifications/initialized');
   }

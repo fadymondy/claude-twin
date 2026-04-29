@@ -14,7 +14,7 @@ function subscribe<T>(channel: string, handler: Subscriber<T>): () => void {
 }
 
 contextBridge.exposeInMainWorld('claudeTwin', {
-  version: '0.0.0',
+  version: '0.1.0',
 
   // Snapshots
   getStatus: () => ipcRenderer.invoke('twin/get-status'),

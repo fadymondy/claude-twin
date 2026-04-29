@@ -1,6 +1,6 @@
 {
   "name": "claude-twin",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Standalone Chrome extension + MCP server + Claude Code plugin for browser-based digital twin monitoring",
   "license": "MIT",
