@@ -12,10 +12,12 @@ import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
 import { createTray, type TrayApi } from './tray.js';
+import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
 
 let mainWindow: BrowserWindow | null = null;
 let bridge: WsBridge | null = null;
 let trayApi: TrayApi | null = null;
+let mcpSocket: McpSocketHost | null = null;
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -76,9 +78,10 @@ app.whenReady().then(async () => {
 
   try {
     await bridge.start();
+    mcpSocket = await startMcpSocketHost(bridge);
     trayApi.setStatus('amber'); // listening, no client yet
   } catch (err) {
-    console.error('[claude-twin] bridge start failed:', err);
+    console.error('[claude-twin] start failed:', err);
     trayApi.setStatus('red');
   }
 });
@@ -89,6 +92,11 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async () => {
   app.isQuitting = true;
+  try {
+    await mcpSocket?.stop();
+  } catch (err) {
+    console.warn('[claude-twin] mcp socket stop error:', err);
+  }
   if (bridge) {
     try {
       await bridge.stop();

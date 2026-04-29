@@ -5,6 +5,7 @@ directories:
   buildResources: resources
 files:
   - out/**/*
+  - shim/**/*
   - package.json
   - '!**/*.{md,test.ts,spec.ts}'
 asar: true
