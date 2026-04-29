@@ -39,3 +39,42 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Build mcp-server
+        run: npm -w @claude-twin/mcp-server run build
+
+      - name: Build desktop renderer + main
+        run: npm -w @claude-twin/desktop run build
+
+  package-extension:
+    name: extension zip
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip extension
+        run: |
+          cd extension
+          zip -r "../claude-twin-extension-${GITHUB_SHA::7}.zip" . \
+            -x "node_modules/*" "dist/*" "*.test.js" "INSTALL.md"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claude-twin-extension
+          path: claude-twin-extension-*.zip
+          retention-days: 14
