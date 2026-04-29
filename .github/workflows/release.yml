@@ -36,27 +36,39 @@ jobs:
       - name: Diagnose app-builder-bin
         shell: bash
         run: |
-          echo '== root node_modules/app-builder-bin =='
-          ls -la node_modules/app-builder-bin/ || true
-          echo '== mac =='
-          ls -la node_modules/app-builder-bin/mac/ 2>&1 || true
-          echo '== linux/x64 =='
-          ls -la node_modules/app-builder-bin/linux/x64/ 2>&1 || true
-          echo '== win/x64 =='
-          ls -la node_modules/app-builder-bin/win/x64/ 2>&1 || true
-          echo '== desktop/node_modules/electron-builder =='
-          ls -la desktop/node_modules/electron-builder 2>&1 | head -3 || true
-          ls -la desktop/node_modules/.bin/ 2>&1 | head -10 || true
-          echo '== which electron-builder =='
-          (cd desktop && node -e 'console.log(require.resolve("app-builder-bin/index.js"))') || true
-          echo '== file size of expected binary =='
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            ls -la node_modules/app-builder-bin/mac/app-builder_arm64 2>&1 || true
-          elif [ "${{ runner.os }}" = "Windows" ]; then
-            ls -la node_modules/app-builder-bin/win/x64/app-builder.exe 2>&1 || true
-          else
-            ls -la node_modules/app-builder-bin/linux/x64/app-builder 2>&1 || true
+          echo '== platform =='
+          uname -a || true
+          echo '== which node =='
+          which node && node --version
+          echo '== mount of work dir =='
+          mount | grep "$(pwd | cut -d/ -f1-3)" || true
+          findmnt -T "$(pwd)" 2>&1 || true
+
+          if [ "${{ runner.os }}" = "macOS" ]; then BIN=node_modules/app-builder-bin/mac/app-builder_arm64
+          elif [ "${{ runner.os }}" = "Windows" ]; then BIN=node_modules/app-builder-bin/win/x64/app-builder.exe
+          else BIN=node_modules/app-builder-bin/linux/x64/app-builder
           fi
+
+          echo '== file =='
+          file "$BIN" 2>&1 || true
+          ls -la "$BIN" 2>&1 || true
+
+          echo '== try to run directly =='
+          "$BIN" --help 2>&1 | head -5 || echo "DIRECT-RUN-FAILED exit=$?"
+
+          echo '== node spawn =='
+          node -e '
+            const { spawnSync } = require("node:child_process");
+            const path = require("node:path");
+            const bin = "'"$BIN"'";
+            const abs = path.resolve(bin);
+            console.log("abs:", abs);
+            const r = spawnSync(abs, ["--help"], { encoding: "utf8" });
+            console.log("status:", r.status, "signal:", r.signal);
+            console.log("error:", r.error?.code, r.error?.message);
+            console.log("stdout:", (r.stdout || "").slice(0, 200));
+            console.log("stderr:", (r.stderr || "").slice(0, 500));
+          '
 
       # If the binary really is missing, reinstall just app-builder-bin
       # locally into desktop/node_modules to bypass any workspace hoist issue.
