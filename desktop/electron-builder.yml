@@ -6,6 +6,7 @@ directories:
 files:
   - out/**/*
   - shim/**/*
+  - resources/**/*
   - package.json
   - '!**/*.{md,test.ts,spec.ts}'
 asar: true

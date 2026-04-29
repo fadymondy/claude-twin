@@ -167,12 +167,42 @@ h1 {
   text-align: center;
 }
 
+.update-banner,
 .meeting-prompt {
   background: var(--hover);
   border: 1px solid var(--accent);
   border-radius: 6px;
   padding: 10px;
   margin-bottom: 8px;
+}
+
+.update-banner p {
+  margin: 0 0 6px 0;
+}
+
+.update-banner .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.update-banner a#update-link {
+  flex: 1;
+  text-align: center;
+  background: var(--accent);
+  color: var(--accent-fg);
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.update-banner button.secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
 }
 
 .meeting-prompt .actions {
