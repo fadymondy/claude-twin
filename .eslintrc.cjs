@@ -39,5 +39,23 @@ module.exports = {
         '@typescript-eslint/no-var-requires': 'off',
       },
     },
+    {
+      // Content scripts run as classic scripts (manifest v3 isolated world,
+      // not modules) and lean on globals attached by content/shared/*.js
+      // (TwinMonitor, TwinMessenger, TwinLanguage).
+      files: ['extension/content/**/*.js'],
+      parserOptions: { sourceType: 'script' },
+      globals: {
+        TwinMonitor: 'readonly',
+        TwinMessenger: 'readonly',
+        TwinLanguage: 'readonly',
+      },
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-empty': 'off',
+        'no-prototype-builtins': 'off',
+        'no-inner-declarations': 'off',
+      },
+    },
   ],
 };
