@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.claude.com/claude-code/marketplace.json",
+  "name": "claude-twin",
+  "owner": {
+    "name": "Fady Mondy",
+    "email": "info@3x1.io",
+    "url": "https://github.com/fadymondy"
+  },
+  "plugins": [
+    {
+      "name": "claude-twin",
+      "source": "./plugin",
+      "description": "Drive 17 web apps (Gmail, Slack, WhatsApp, Discord, Telegram, X, GitHub, Linear, Jira, GCal, Cal.com, Google Meet, Zoom, GCP, Claude.ai, OpenAI, Perplexity) from inside a Claude Code conversation.",
+      "version": "0.1.1",
+      "category": "automation",
+      "keywords": ["mcp", "chrome-extension", "browser-automation", "digital-twin", "monitor"]
+    }
+  ]
+}

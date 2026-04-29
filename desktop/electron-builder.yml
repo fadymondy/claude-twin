@@ -5,10 +5,15 @@ directories:
   buildResources: resources
 files:
   - out/**/*
-  - shim/**/*
   - resources/**/*
   - package.json
   - '!**/*.{md,test.ts,spec.ts}'
+# shim/ must live OUTSIDE app.asar — cli-install.ts symlinks
+# `Resources/shim/claude-twin-mcp.cjs` onto the user's PATH, and a path
+# inside an asar archive isn't directly executable by node.
+extraResources:
+  - from: shim
+    to: shim
 asar: true
 mac:
   category: public.app-category.developer-tools

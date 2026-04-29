@@ -1,6 +1,6 @@
 {
   "name": "@claude-twin/desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Electron desktop app — bundles the MCP server and WS bridge, renders live twin events",
   "license": "MIT",

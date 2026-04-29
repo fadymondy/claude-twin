@@ -62,6 +62,23 @@
           <span>Privacy mode</span>
         </label>
       </div>
+      <div class="token-row">
+        <label class="label" for="token-input">Bridge token</label>
+        <div class="token-input-row">
+          <input
+            type="password"
+            id="token-input"
+            placeholder="Paste from desktop Settings"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="token-reveal" class="secondary" type="button" title="Show / hide">👁</button>
+          <button id="token-save" type="button">Save</button>
+        </div>
+        <p id="token-hint" class="muted hint">
+          Open the desktop app → Settings → copy the WS token, paste here.
+        </p>
+      </div>
     </section>
 
     <section data-pane="monitors" class="pane hidden">

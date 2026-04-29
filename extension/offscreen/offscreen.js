@@ -261,6 +261,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       token = payload.token;
       if (isConnected) {
         send({ type: 'auth', token, extension_id: extensionId });
+      } else {
+        // Bridge likely closed the prior socket on bad-auth (4401).
+        // Drop any pending backoff and reconnect now so the new token
+        // takes effect without waiting up to 30s.
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        reconnectAttempt = 0;
+        connect();
       }
     }
     sendResponse({ ok: true });
