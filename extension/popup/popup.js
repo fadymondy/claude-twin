@@ -25,6 +25,10 @@ const els = {
   meetingPlatform: document.getElementById('meeting-platform'),
   meetingApprove: document.getElementById('meeting-approve'),
   meetingDeny: document.getElementById('meeting-deny'),
+  updateBanner: document.getElementById('update-banner'),
+  updateVersion: document.getElementById('update-version'),
+  updateLink: document.getElementById('update-link'),
+  updateRecheck: document.getElementById('update-recheck'),
 };
 
 const PLATFORM_ORIGINS = [
@@ -233,8 +237,26 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
+async function renderUpdateBanner() {
+  const response = await send('getUpdateState');
+  const state = response?.data;
+  if (!state?.available) {
+    els.updateBanner.classList.add('hidden');
+    return;
+  }
+  els.updateBanner.classList.remove('hidden');
+  els.updateVersion.textContent = `v${state.available}`;
+  els.updateLink.href = state.downloadUrl || state.latestUrl || '#';
+}
+
+els.updateRecheck?.addEventListener('click', async () => {
+  await send('checkForUpdates');
+  await renderUpdateBanner();
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   activateTab('status');
   await renderStatus();
   await renderMeetingPrompt();
+  await renderUpdateBanner();
 });

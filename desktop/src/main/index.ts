@@ -1,15 +1,13 @@
 /**
  * claude-twin desktop — Electron main process entry.
  *
- *   - boots a single hidden BrowserWindow that loads the React renderer
+ *   - boots a single BrowserWindow (visible on launch)
  *   - registers the system tray (3-state status colour: red/amber/green)
  *   - embeds the @claude-twin/mcp-server WsBridge directly so the user
  *     doesn't need a separate Node install
- *   - hides the dock icon on macOS so we live in the menubar by default
  *
- * mcp-server is `"type":"module"` ESM. Electron's main process here is CJS,
- * so we pull in WsBridge via an `await import(...)` inside the async
- * whenReady handler — Node CJS can dynamic-import ESM, just not statically.
+ * mcp-server is `"type":"module"` ESM. Electron's main process here is
+ * CJS, so we pull it in via `await import(...)` inside async functions.
  */
 
 import { app, BrowserWindow } from 'electron';
@@ -18,7 +16,7 @@ import type { WsBridge as WsBridgeT } from '@claude-twin/mcp-server/dist/bridge/
 import { createTray, type TrayApi } from './tray.js';
 import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
 import { attachIpc, pushLog } from './ipc.js';
-import { startAutoUpdate } from './auto-update.js';
+import { startAutoUpdate, manualCheckForUpdates } from './auto-update.js';
 
 let mainWindow: BrowserWindow | null = null;
 let bridge: WsBridgeT | null = null;
@@ -29,7 +27,7 @@ function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 920,
     height: 640,
-    show: false, // tray-first; user clicks "Show details" to reveal
+    show: false,
     title: 'claude-twin',
     autoHideMenuBar: true,
     webPreferences: {
@@ -41,7 +39,6 @@ function createWindow(): BrowserWindow {
   });
 
   win.on('close', (e) => {
-    // Tray-first: closing the window only hides it. Real quit is via tray menu.
     if (!app.isQuitting) {
       e.preventDefault();
       win.hide();
@@ -57,59 +54,62 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
-app.whenReady().then(async () => {
-  if (process.platform === 'darwin') {
-    app.dock?.hide();
-  }
+function showWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) mainWindow = createWindow();
+  mainWindow.show();
+  mainWindow.focus();
+}
 
+function toggleWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    showWindow();
+    return;
+  }
+  if (mainWindow.isVisible()) mainWindow.hide();
+  else showWindow();
+}
+
+app.whenReady().then(async () => {
   mainWindow = createWindow();
+  showWindow();
 
   trayApi = createTray({
-    onShow: () => {
-      if (!mainWindow) mainWindow = createWindow();
-      mainWindow.show();
-      mainWindow.focus();
-    },
+    onShow: toggleWindow,
     onOpenSettings: () => {
-      if (!mainWindow) mainWindow = createWindow();
-      mainWindow.show();
-      mainWindow.focus();
-      mainWindow.webContents.send('navigate', '/settings');
+      showWindow();
+      mainWindow?.webContents.send('navigate', '/settings');
     },
+    onCheckForUpdates: () => manualCheckForUpdates(),
     onQuit: () => {
       app.isQuitting = true;
       app.quit();
     },
   });
 
-  const { WsBridge } = await import('@claude-twin/mcp-server/dist/bridge/ws-host.js');
-  bridge = new WsBridge({
-    token: process.env.CLAUDE_TWIN_WS_TOKEN ?? null,
-  });
-
-  bridge.on('ready', () => trayApi?.setStatus('green'));
-  attachIpc(bridge);
-
   try {
+    const { WsBridge } = await import('@claude-twin/mcp-server/dist/bridge/ws-host.js');
+    bridge = new WsBridge({
+      token: process.env.CLAUDE_TWIN_WS_TOKEN ?? null,
+    });
+
+    bridge.on('ready', () => trayApi?.setStatus('green'));
+    attachIpc(bridge);
+
     await bridge.start();
     mcpSocket = await startMcpSocketHost(bridge);
-    trayApi.setStatus('amber'); // listening, no client yet
+    trayApi.setStatus('amber');
     pushLog({
       ts: Date.now(),
       level: 'info',
       source: 'bridge',
       message: 'WS bridge listening on ' + bridge.status().url,
     });
-    if (app.isPackaged) startAutoUpdate();
+    if (app.isPackaged) {
+      startAutoUpdate((s) => trayApi?.setUpdateState(s));
+    }
   } catch (err) {
     console.error('[claude-twin] start failed:', err);
-    trayApi.setStatus('red');
-    pushLog({
-      ts: Date.now(),
-      level: 'error',
-      source: 'bridge',
-      message: err instanceof Error ? err.message : String(err),
-    });
+    trayApi?.setStatus('red');
   }
 });
 
@@ -134,8 +134,7 @@ app.on('before-quit', async () => {
 });
 
 app.on('activate', () => {
-  if (!mainWindow) mainWindow = createWindow();
-  mainWindow.show();
+  showWindow();
 });
 
 declare global {

@@ -14,6 +14,9 @@ import '../commands/tabs.js';
 import '../commands/dom.js';
 import '../commands/search.js';
 import '../commands/scripts.js';
+import { armUpdateAlarm, checkForUpdate } from './update-checker.js';
+
+armUpdateAlarm();
 
 const OFFSCREEN_URL = chrome.runtime.getURL('offscreen/offscreen.html');
 
@@ -61,6 +64,9 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   }
 
   await ensureOffscreenDocument();
+  // First update check soon after install/update so the user sees the
+  // "available" banner promptly when there's already a newer release.
+  setTimeout(() => void checkForUpdate(), 30_000);
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -186,6 +192,25 @@ async function handlePopupRequest(message, sendResponse) {
       token: message.value || null,
     });
     sendResponse({ ok: true });
+    return;
+  }
+
+  if (action === 'checkForUpdates') {
+    const state = await checkForUpdate();
+    sendResponse({ ok: true, data: state });
+    return;
+  }
+
+  if (action === 'getUpdateState') {
+    const stored = await chrome.storage.local.get('updateState');
+    sendResponse({
+      ok: true,
+      data: stored.updateState ?? {
+        installed: chrome.runtime.getManifest().version,
+        available: null,
+        checkedAt: null,
+      },
+    });
     return;
   }
 
