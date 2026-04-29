@@ -10,10 +10,12 @@
 
 import * as vscode from 'vscode';
 import { McpClient, type ToolDefinition } from './mcp-client';
+import { EventsViewProvider } from './events-view';
 
 let client: McpClient | null = null;
 let statusBar: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
+let eventsView: EventsViewProvider | null = null;
 
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel('claude-twin');
@@ -43,6 +45,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   });
 
+  eventsView = new EventsViewProvider(client, context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(EventsViewProvider.viewType, eventsView),
+  );
+
   context.subscriptions.push(
     vscode.commands.registerCommand('claudeTwin.checkStatus', () => commandCheckStatus()),
     vscode.commands.registerCommand('claudeTwin.reconnect', () => commandReconnect()),
@@ -52,6 +59,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeTwin.search', () => commandSearch()),
     vscode.commands.registerCommand('claudeTwin.registerMonitor', () => commandRegisterMonitor()),
     vscode.commands.registerCommand('claudeTwin.recentEvents', () => commandRecentEvents()),
+    vscode.commands.registerCommand('claudeTwin.focusEvents', () => eventsView?.focus()),
   );
 
   if (vscode.workspace.getConfiguration('claudeTwin').get<boolean>('autoConnect', true)) {
