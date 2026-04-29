@@ -25,8 +25,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # Don't pass --workspaces flag — npm 10/11 already installs workspaces
+      # by default, and `--workspaces --include-workspace-root` skips
+      # transitive postinstall lifecycle scripts (notably for app-builder-bin
+      # which prebuilds platform-specific electron-builder helpers, leading
+      # to "spawn .../app-builder ENOENT" at package time).
       - name: Install dependencies
-        run: npm ci --workspaces --include-workspace-root
+        run: npm ci
 
       - name: Build mcp-server
         run: npm -w @claude-twin/mcp-server run build
@@ -85,7 +90,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Install + build
         run: |
-          npm ci --workspaces --include-workspace-root
+          npm ci
           npm -w @claude-twin/mcp-server run build
       - name: Publish to npm (skip if NODE_AUTH_TOKEN missing)
         env:
