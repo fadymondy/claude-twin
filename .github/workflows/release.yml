@@ -32,14 +32,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Defensive: force-rebuild app-builder-bin so its prebuilt binaries
-      # land on disk even if npm ci skipped them. Cheap (no compile —
-      # the binaries ship inside the npm tarball).
-      - name: Ensure app-builder-bin binaries
-        run: npm rebuild app-builder-bin
-
       - name: Build mcp-server
         run: npm -w @claude-twin/mcp-server run build
+
+      # electron-builder's "installing production dependencies" step runs
+      # `npm install --production` inside `desktop/`, which would prune
+      # devDependencies — taking app-builder-bin (and its platform-specific
+      # binaries) with it, then immediately ENOENT'ing on the binary it
+      # just deleted. Pre-populating desktop/node_modules with the full
+      # dep tree (deps + devDeps) makes electron-builder skip its own
+      # install entirely.
+      - name: Pre-populate desktop/node_modules
+        shell: bash
+        run: |
+          cd desktop
+          # Don't write a per-package lockfile (the workspace lockfile is
+          # the source of truth); don't reach back to the root workspace.
+          npm install --no-package-lock --no-fund --no-audit --workspaces=false
 
       - name: Build + package desktop
         env:
