@@ -64,8 +64,32 @@
         "command": "claudeTwin.reconnect",
         "title": "claude-twin: Reconnect to desktop app",
         "category": "claude-twin"
+      },
+      {
+        "command": "claudeTwin.focusEvents",
+        "title": "claude-twin: Focus live events panel",
+        "category": "claude-twin"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeTwinSidebar",
+          "title": "claude-twin",
+          "icon": "media/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeTwinSidebar": [
+        {
+          "type": "webview",
+          "id": "claudeTwin.events",
+          "name": "Live events",
+          "contextualTitle": "claude-twin"
+        }
+      ]
+    },
     "configuration": {
       "title": "claude-twin",
       "properties": {
