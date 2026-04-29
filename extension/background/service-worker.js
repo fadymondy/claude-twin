@@ -94,6 +94,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((err) => sendResponse({ error: { message: err?.message || String(err) } }));
     return true; // async sendResponse
   }
+
+  // Anything else with a string `type` from a content script is a platform
+  // event. Wrap it as `{type:'event', ...}` and forward over WS.
+  if (typeof message.type === 'string' && _sender?.tab) {
+    let source = 'unknown';
+    try {
+      source = new URL(_sender.tab.url || '').hostname.replace(/^www\./, '');
+    } catch {
+      /* ignore */
+    }
+    void forwardToOffscreen({
+      type: 'event',
+      source,
+      eventType: message.type,
+      data: message.data ?? message,
+      timestamp: Date.now(),
+    });
+    sendResponse({ ok: true });
+    return;
+  }
 });
 
 async function handleOffscreenEvent(event, data) {

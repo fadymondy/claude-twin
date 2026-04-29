@@ -34,6 +34,179 @@
     "*://platform.openai.com/*",
     "*://perplexity.ai/*"
   ],
+  "content_scripts": [
+    {
+      "matches": ["*://mail.google.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/gmail.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://app.slack.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/slack.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://web.whatsapp.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/whatsapp.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://discord.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/discord.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://web.telegram.org/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/telegram.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://x.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/twitter.js",
+        "content/x-premium.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://github.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/github.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://linear.app/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/linear.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.atlassian.net/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/jira.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://calendar.google.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/gcal.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://app.cal.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/calcom.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://meet.google.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/gmeet.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://app.zoom.us/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/zoom.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://console.cloud.google.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/gcp-billing.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://claude.ai/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/claude-usage.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://platform.openai.com/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/openai-usage.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://perplexity.ai/*"],
+      "js": [
+        "content/shared/messenger.js",
+        "content/shared/observer.js",
+        "content/shared/language.js",
+        "content/perplexity-usage.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["offscreen/offscreen.html"],
