@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
 import { createTray, type TrayApi } from './tray.js';
 import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
+import { attachIpc, pushLog } from './ipc.js';
 
 let mainWindow: BrowserWindow | null = null;
 let bridge: WsBridge | null = null;
@@ -64,6 +65,13 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.focus();
     },
+    onOpenSettings: () => {
+      if (!mainWindow) mainWindow = createWindow();
+      mainWindow.show();
+      mainWindow.focus();
+      // Settings UI lands as a route in #45.
+      mainWindow.webContents.send('navigate', '/settings');
+    },
     onQuit: () => {
       app.isQuitting = true;
       app.quit();
@@ -75,14 +83,27 @@ app.whenReady().then(async () => {
   });
 
   bridge.on('ready', () => trayApi?.setStatus('green'));
+  attachIpc(bridge);
 
   try {
     await bridge.start();
     mcpSocket = await startMcpSocketHost(bridge);
     trayApi.setStatus('amber'); // listening, no client yet
+    pushLog({
+      ts: Date.now(),
+      level: 'info',
+      source: 'bridge',
+      message: 'WS bridge listening on ' + bridge.status().url,
+    });
   } catch (err) {
     console.error('[claude-twin] start failed:', err);
     trayApi.setStatus('red');
+    pushLog({
+      ts: Date.now(),
+      level: 'error',
+      source: 'bridge',
+      message: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
