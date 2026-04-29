@@ -13,7 +13,15 @@
     "service_worker": "background/service-worker.js",
     "type": "module"
   },
-  "permissions": ["tabs", "scripting", "storage", "offscreen", "alarms", "tabGroups"],
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage",
+    "offscreen",
+    "alarms",
+    "tabGroups",
+    "notifications"
+  ],
   "host_permissions": ["*://www.google.com/*"],
   "optional_host_permissions": [
     "*://mail.google.com/*",
