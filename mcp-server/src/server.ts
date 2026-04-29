@@ -22,12 +22,16 @@ export interface CreatedServer {
   bridge: WsBridge;
 }
 
-export function createServer(opts: CreateServerOptions = {}): CreatedServer {
+/**
+ * Construct an MCP server with all twin_* tools wired up to the given bridge.
+ * Use this when you already own a `WsBridge` (e.g. inside the Electron desktop
+ * app, where one bridge is shared across multiple stdio shim connections).
+ */
+export function createMcpServer(bridge: WsBridge): McpServer {
   const server = new McpServer(
     { name: SERVER_NAME, version: SERVER_VERSION },
     { capabilities: { tools: {} } },
   );
-  const bridge = new WsBridge(opts.bridge ?? {});
 
   registerPingTool(server);
   registerBridgeTool(server, bridge);
@@ -40,5 +44,16 @@ export function createServer(opts: CreateServerOptions = {}): CreatedServer {
   const monitors = new MonitorRegistry(bridge);
   registerMonitorTools(server, monitors);
 
+  return server;
+}
+
+/**
+ * One-shot factory: creates a fresh `WsBridge` and an `McpServer` wired to it.
+ * Used by the standalone `claude-twin-mcp` stdio binary that runs without
+ * the Electron app (kept for tests and for users who don't want a desktop UI).
+ */
+export function createServer(opts: CreateServerOptions = {}): CreatedServer {
+  const bridge = new WsBridge(opts.bridge ?? {});
+  const server = createMcpServer(bridge);
   return { server, bridge };
 }
