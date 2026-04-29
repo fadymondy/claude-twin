@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "claude-twin",
   "short_name": "claude-twin",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Real-time browser monitoring for your digital twin — drives 17 web apps from Claude Code via a local MCP server.",
   "minimum_chrome_version": "120",
   "action": {
