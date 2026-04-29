@@ -41,6 +41,21 @@ export interface ClaudeTwinApi {
   cliUninstall: () => Promise<{ ok: boolean; error?: string }>;
   getToken: () => Promise<string | null>;
   rotateToken: () => Promise<string>;
+  historyEvents: (opts?: {
+    source?: string;
+    since?: number;
+    until?: number;
+    limit?: number;
+  }) => Promise<TwinEvent[]>;
+  historyLogs: (opts?: { level?: string; since?: number; limit?: number }) => Promise<TwinLog[]>;
+  historyClear: () => Promise<{ events: number; logs: number }>;
+  historyExport: () => Promise<
+    | { ok: true; path: string; events: number; logs: number }
+    | { ok: false; canceled?: boolean; error?: string }
+  >;
+  historyImport: () => Promise<
+    { ok: true; events: number; logs: number } | { ok: false; canceled?: boolean; error?: string }
+  >;
 }
 
 declare global {

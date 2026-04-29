@@ -99,6 +99,49 @@ export function Settings({ onBack }: { onBack: () => void }): React.ReactElement
       </section>
 
       <section className="settings-section">
+        <h2>History</h2>
+        <p className="muted">
+          Every twin event + log is persisted in <code>events.sqlite</code> under the user-data
+          directory. Export to share / archive, import to restore from a previous machine, clear to
+          start fresh.
+        </p>
+        <div className="settings-actions">
+          <button
+            onClick={async () => {
+              const r = await window.claudeTwin.historyExport();
+              if (r.ok) alert(`Exported ${r.events} events + ${r.logs} logs to ${r.path}`);
+              else if (!r.canceled && r.error) alert(`Export failed: ${r.error}`);
+            }}
+            disabled={!!busy}
+          >
+            Export…
+          </button>
+          <button
+            onClick={async () => {
+              const r = await window.claudeTwin.historyImport();
+              if (r.ok) alert(`Imported ${r.events} events + ${r.logs} logs.`);
+              else if (!r.canceled && r.error) alert(`Import failed: ${r.error}`);
+            }}
+            disabled={!!busy}
+            className="secondary"
+          >
+            Import…
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm('Clear all event + log history? This cannot be undone.')) return;
+              const r = await window.claudeTwin.historyClear();
+              alert(`Cleared ${r.events} events + ${r.logs} logs.`);
+            }}
+            disabled={!!busy}
+            className="secondary"
+          >
+            Clear history
+          </button>
+        </div>
+      </section>
+
+      <section className="settings-section">
         <h2>Bridge token</h2>
         <p className="muted">
           Shared secret between this app and the Chrome extension. Auto-generated on first launch.
