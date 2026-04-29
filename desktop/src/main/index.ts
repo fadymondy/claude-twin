@@ -14,6 +14,7 @@ import { WsBridge } from '@claude-twin/mcp-server/dist/bridge/ws-host.js';
 import { createTray, type TrayApi } from './tray.js';
 import { startMcpSocketHost, type McpSocketHost } from './mcp-socket.js';
 import { attachIpc, pushLog } from './ipc.js';
+import { startAutoUpdate } from './auto-update.js';
 
 let mainWindow: BrowserWindow | null = null;
 let bridge: WsBridge | null = null;
@@ -95,6 +96,7 @@ app.whenReady().then(async () => {
       source: 'bridge',
       message: 'WS bridge listening on ' + bridge.status().url,
     });
+    if (app.isPackaged) startAutoUpdate();
   } catch (err) {
     console.error('[claude-twin] start failed:', err);
     trayApi.setStatus('red');
