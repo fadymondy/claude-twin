@@ -64,6 +64,13 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.focus();
     },
+    onOpenSettings: () => {
+      if (!mainWindow) mainWindow = createWindow();
+      mainWindow.show();
+      mainWindow.focus();
+      // Settings UI lands as a route in #45.
+      mainWindow.webContents.send('navigate', '/settings');
+    },
     onQuit: () => {
       app.isQuitting = true;
       app.quit();
