@@ -18,7 +18,7 @@
     "dev": "tsc --build --watch",
     "start": "node dist/index.js",
     "typecheck": "tsc --build --dry",
-    "test": "node --test dist/**/*.test.js"
+    "test": "node --test --test-reporter=spec --enable-source-maps 'dist/**/*.test.js'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0",

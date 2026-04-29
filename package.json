@@ -27,7 +27,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --build && npm -w @claude-twin/desktop run typecheck && npm -w @claude-twin/vscode-extension run typecheck",
     "build": "npm run --workspaces --if-present build",
-    "test": "npm run --workspaces --if-present test",
+    "test": "npm -w @claude-twin/mcp-server run build && npm run --workspaces --if-present test",
     "clean": "tsc --build --clean && rimraf '*/dist'"
   },
   "devDependencies": {
